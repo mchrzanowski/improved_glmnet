@@ -9,8 +9,8 @@ LIBS = -L/usr/local/lib -L/opt/intel/lib/intel64 -L/opt/intel/mkl/lib/intel64
 LDFLAGS = -larmadillo -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5
 
 # sources
-sources := basic_armadillo.cpp
-targets := $(sources:.cpp=.out)
+sources := basic_armadillo.cc
+targets := $(sources:.cc=.out)
 
 # gmake magic
 .PHONY: default all clean
@@ -18,7 +18,7 @@ targets := $(sources:.cpp=.out)
 #targets
 default: all
 all:
-	$(CXX) $(CCFLAGS) $(INCLUDES) $(LIBS) -o basic_armadillo.out basic_armadillo.cpp $(LDFLAGS)
+	$(CXX) $(CCFLAGS) $(INCLUDES) $(LIBS) -o basic_armadillo.out basic_armadillo.cc $(LDFLAGS)
 
 clean:
 	$(RM) $(targets)
