@@ -1,6 +1,7 @@
 # Makefile based *HEAVILY* on Jerry Cain's CS110 Makefiles
 
 CXX = g++
+RM = rm -f
 
 # flags
 CXXFLAGS = -std=c++0x -Wall -O3 -I/usr/include -I/usr/local/include -L/usr/local/lib -L/opt/intel/lib/intel64 -L/opt/intel/mkl/lib/intel64
@@ -35,7 +36,7 @@ Makefile.dependencies:: $(SOURCES) $(HEADERS)
 .PHONY: clean spartan
 
 clean:
-	@rm -f $(TARGETS) $(OBJECTS) core Makefile.dependencies
+	$(RM) $(TARGETS) $(OBJECTS) core Makefile.dependencies
 
 spartan: clean
-	@rm -f *~
+	$(RM) *~
