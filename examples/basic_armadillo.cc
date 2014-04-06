@@ -5,17 +5,15 @@ using namespace std;
 using namespace arma;
 
 
-void init(const mat& A, const vec& b, const vec& x, vec& p, vec& r) {
+void init(const mat &A, const vec &b, const vec &x, vec &p, vec &r) {
     r = A * x - b;
-    cout << p(0) << endl;
     p = -r;
-    cout << p(0) << endl;
 }
 
 int main(int argc, char **argv) {
   
-  wall_clock timer;
-  /*size_t size = 10000;
+  /*wall_clock timer;
+  size_t size = 10000;
   mat A = randn<mat>(size, size);
   mat B = randn<mat>(size, size);
 
@@ -35,9 +33,18 @@ int main(int argc, char **argv) {
   vec p = randn<vec>(size);
   vec r = randn<vec>(size);
 
-  init(A, b, x, p, r);
+  double lol = dot(x, p);
+  
+  cout << "Value: " << lol << endl;
+  cout << "Value: " << dot(x, p) << endl;
+  return 0;
 
-  cout << p(0) << "\t" << r(0) << endl;
+  cout << "Before: " << p(0) << "\t" << r(0) << endl;
+  cout << &p << "\t" << &r << endl;
+  init(A, b, x, p, r);
+  cout << "After: " << p(0) << "\t" << r(0) << endl;
+  cout << &p << "\t" << &r << endl;
+
   p(0) = -1;
   cout << p(0) << "\t" << r(0) << endl;
 
