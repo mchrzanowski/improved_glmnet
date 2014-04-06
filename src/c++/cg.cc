@@ -1,8 +1,6 @@
 #include "cg.h"
 
 using namespace arma;
-using namespace std;
-
 
 void cg_init(const mat &A, const vec &b, const vec &x, vec &p, vec &r) {
     r = A * x - b;
