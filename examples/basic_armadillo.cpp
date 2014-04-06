@@ -4,8 +4,7 @@
 using namespace std;
 using namespace arma;
  
-int main()
-{
+int main(int argc, char **argv) {
   
   wall_clock timer;
   size_t size = 10000;

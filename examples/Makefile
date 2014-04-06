@@ -3,7 +3,7 @@ CXX := g++
 RM := rm -f
 
 # flags
-CCFLAGS = -std=c++0x -Wall
+CCFLAGS = -std=c++0x -Wall -O3
 INCLUDES = -I/usr/include -I/usr/local/include
 LIBS = -L/usr/local/lib -L/opt/intel/lib/intel64 -L/opt/intel/mkl/lib/intel64
 LDFLAGS = -larmadillo -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5
