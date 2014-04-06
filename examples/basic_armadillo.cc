@@ -5,7 +5,7 @@ using namespace std;
 using namespace arma;
 
 
-void init(mat &A, vec &b, vec &x, vec &p, vec &r) {
+void init(const mat& A, const vec& b, const vec& x, vec& p, vec& r) {
     r = A * x - b;
     cout << p(0) << endl;
     p = -r;

@@ -1,11 +1,11 @@
 #include "cg.h"
 
-void init(mat &A, vec &b, vec &x, vec &p, vec &r) {
+void init(const mat& A, const vec& b, const vec& x, vec& p, vec& r) {
     r = A * x - b;
     p = -vec(r);
 }
 
-void solve(mat &A, vec &x, vec &p, vec &r, size_t iterations=3) {
+void solve(const mat& A, vec& x, vec& p, vec& r, size_t iterations=3) {
     for (size_t i = 0; i < iterations; i++){
         vec Ap = A * p;
         
