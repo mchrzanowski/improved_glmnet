@@ -10,7 +10,7 @@ LDFLAGS = -larmadillo -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5
 
 # sources
 sources := basic_armadillo.cpp
-targets := $(sources:.cpp=)
+targets := $(sources:.cpp=.out)
 
 # gmake magic
 .PHONY: default all clean
@@ -18,7 +18,7 @@ targets := $(sources:.cpp=)
 #targets
 default: all
 all:
-	$(CXX) $(CCFLAGS) $(INCLUDES) $(LIBS) -o basic_armadillo basic_armadillo.cpp $(LDFLAGS)
+	$(CXX) $(CCFLAGS) $(INCLUDES) $(LIBS) -o basic_armadillo.out basic_armadillo.cpp $(LDFLAGS)
 
 clean:
 	$(RM) $(targets)
