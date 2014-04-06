@@ -1,0 +1,24 @@
+# tools
+CXX := g++
+RM := rm -f
+
+# flags
+CCFLAGS = -std=c++0x -Wall
+INCLUDES = -I/usr/include -I/usr/local/include
+LIBS = -L/usr/local/lib -L/opt/intel/lib/intel64 -L/opt/intel/mkl/lib/intel64
+LDFLAGS = -larmadillo -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5
+
+# sources
+sources := basic_armadillo.cpp
+targets := $(sources:.cpp=)
+
+# gmake magic
+.PHONY: default all clean
+
+#targets
+default: all
+all:
+	$(CXX) $(CCFLAGS) $(INCLUDES) $(LIBS) -o basic_armadillo basic_armadillo.cpp $(LDFLAGS)
+
+clean:
+	$(RM) $(targets)
