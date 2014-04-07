@@ -20,8 +20,27 @@ using namespace arma;
         << "\tRuntime: " << duration << endl;
 }*/
 
+void test(const mat &A, const vec &b, const double lambda, const double eta, const size_t size, const size_t iterations){
+    cout << "Iterations: " << iterations << endl;
+    vec z = randn<vec>(size * 2);
+    
+    vec w = z.subvec(0, size - 1) - z.subvec(size, 2 * size - 1);
+    double pre_error = 0.5 * sum(square(b - A * w))
+        + lambda * (eta * sum(abs(w)) + 0.5 * (1 - eta) * sum(square(w)));
+    cout << "Post-Error: " << pre_error << endl;
+
+    GLM g(A, b, lambda, eta);
+    cout << "K Created!" << endl;
+    g.solve(z, 1e-8, iterations);
+    
+    w = z.subvec(0, size - 1) - z.subvec(size, 2 * size - 1);
+    double post_error = 0.5 * sum(square(b - A * w))
+        + lambda * (eta * sum(abs(w)) + 0.5 * (1 - eta) * sum(square(w)));
+    cout << "Post-Error: " << post_error << endl;
+}
+
 int main(int argc, char **argv){
-    const size_t size = 100;
+    const size_t size = 1000;
 
     // create symmetric, PD matrix..
     mat A = randn<mat>(size, size);
@@ -29,15 +48,11 @@ int main(int argc, char **argv){
     A += size * eye(size, size);
 
     const vec b = randn<vec>(size);
+    
+    double eta = 0.5;
+    double lambda = 0.1;
 
-    vec z = randn<vec>(size * 2);
-
-    GLM g(A, b, 0.1, 0.5);
-    cout << "K Created!" << endl;
-    g.solve(z, 1e-8, 10000);
-
-    vec x = z.subvec(0, size - 1) - z.subvec(size, 2 * size - 1);
-
-    cout << norm(A * x - b, 2) << endl;
-
+    test(A, b, lambda, eta, size, 100);
+    test(A, b, lambda, eta, size, 500);
+    test(A, b, lambda, eta, size, 900);
 }

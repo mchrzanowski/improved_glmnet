@@ -60,7 +60,7 @@ void GLM::solve(vec &z, const double epsilon, const size_t max_iterations){
         const size_t A_size = A.n_rows;
 
         if (A.n_rows == A_prev.n_rows && accu(A == A_prev) == A_size){
-            cg_solve(K_A, delz_A, p, r, 3);
+            cg_solve(K_A, delz_A, p, r, 4);
         }
         else {
             K_A = K(A, A);
@@ -70,7 +70,7 @@ void GLM::solve(vec &z, const double epsilon, const size_t max_iterations){
             const vec g_A = -g(A);
 
             cg_init(K_A, g_A, delz_A, p, r);
-            cg_solve(K_A, delz_A, p, r, 2);
+            cg_solve(K_A, delz_A, p, r, 3);
         }
         A_prev = A;
 

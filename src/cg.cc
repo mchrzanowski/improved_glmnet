@@ -7,7 +7,7 @@ void cg_init(const mat &A, const vec &b, const vec &x, vec &p, vec &r) {
     p = -r;
 }
 
-void cg_solve(const mat &A, vec &x, vec &p, vec &r, const size_t iterations=3) {
+void cg_solve(const mat &A, vec &x, vec &p, vec &r, const size_t iterations) {
     for (size_t i = 0; i < iterations && norm(r, 2) > RESIDUAL_TOL; i++){
         const vec Ap = A * p;
         
