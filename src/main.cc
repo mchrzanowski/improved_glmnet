@@ -1,12 +1,11 @@
 #include <iostream>
 #include <armadillo>
-#include "cg.h"
+#include "glm.h"
 
 using namespace std;
 using namespace arma;
 
-void test_solver(const mat &A, const mat &b, const vec &x_star,
-size_t size, size_t iterations){
+/*void test_solver(const mat &A, const mat &b, const vec &x_star, size_t size, size_t iterations){
     vec x = zeros<vec>(size);
     vec p = zeros<vec>(size);
     vec r = zeros<vec>(size);
@@ -19,10 +18,10 @@ size_t size, size_t iterations){
     cout << "Iterations: " << iterations
         << " Error: " << norm(A * x - b, 2) 
         << "\tRuntime: " << duration << endl;
-}
+}*/
 
 int main(int argc, char **argv){
-    const size_t size = 20000;
+    const size_t size = 100;
 
     // create symmetric, PD matrix..
     mat A = randn<mat>(size, size);
@@ -31,13 +30,14 @@ int main(int argc, char **argv){
 
     const vec b = randn<vec>(size);
 
-    wall_clock timer;
-    timer.tic();
-    const vec x_star = solve(A, b);
-    double duration = timer.toc();
-    cout << "Error: " << norm(A * x_star - b, 2)
-        << "\tRuntime: " << duration << endl;
+    vec z = randn<vec>(size * 2);
 
-    test_solver(A, b, x_star, size, 80);
+    GLM g(A, b, 0.1, 0.5);
+    cout << "K Created!" << endl;
+    g.solve(z, 1e-8, 10000);
+
+    vec x = z.subvec(0, size - 1) - z.subvec(size, 2 * size - 1);
+
+    cout << norm(A * x - b, 2) << endl;
 
 }

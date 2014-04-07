@@ -9,7 +9,7 @@ LIBS = -L/usr/local/lib -L/opt/intel/lib/intel64 -L/opt/intel/mkl/lib/intel64
 LDFLAGS = -larmadillo -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5
 
 # sources
-sources := basic_armadillo.cc
+sources := basic_armadillo.cc matrix_multiply.cc subview_efficiency.cc
 targets := $(sources:.cc=.out)
 
 # gmake magic
@@ -19,6 +19,8 @@ targets := $(sources:.cc=.out)
 default: all
 all:
 	$(CXX) $(CCFLAGS) $(INCLUDES) $(LIBS) -o basic_armadillo.out basic_armadillo.cc $(LDFLAGS)
+	$(CXX) $(CCFLAGS) $(INCLUDES) $(LIBS) -o matrix_multiply.out matrix_multiply.cc $(LDFLAGS)
+	$(CXX) $(CCFLAGS) $(INCLUDES) $(LIBS) -o subview_efficiency.out subview_efficiency.cc $(LDFLAGS)
 
 clean:
 	$(RM) $(targets)
