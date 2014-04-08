@@ -28,17 +28,9 @@ int main(int argc, char **argv) {
   vec r = randn<vec>(size);
 
   cout << x.t() << endl;
-  cout << p.t() << endl;
+  uvec pos_x = find(x > 0);
+  x(pos_x) -= max(x(pos_x)) + 1;
+  cout << x.t() << endl;
 
-  const uvec a = find(x < 0);
-  const uvec b = find(p >= 0);
-  const vector<uword> c = vunion(a, b);
-
-  cout << a.t() << endl;
-  cout << b.t() << endl;
-  for (uword i : c){
-    cout << i << endl;
-  }
-  
   return 0;
 }
