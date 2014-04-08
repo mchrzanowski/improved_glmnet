@@ -2,6 +2,7 @@
 
 using namespace arma;
 
+/*
 void cg_init(const mat &A, const vec &b, const vec &x, vec &p, vec &r) {
     r = A * x - b;
     p = -r;
@@ -22,6 +23,7 @@ void cg_solve(const mat &A, vec &x, vec &p, vec &r, const size_t iterations) {
         p -= r;
     }
 }
+*/
 
 void CG::solve(const mat &A, const vec &b, vec &x,
     const bool restart, const size_t iterations) {
