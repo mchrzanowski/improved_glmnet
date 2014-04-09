@@ -32,7 +32,7 @@ GLM::GLM(const mat &X, const vec &y, const double lambda, const double eta)
     
     // construct Hessian matrix once and for all.
     const mat XX = X.t() * X;
-    const mat XX_I = XX + eye(XX.n_rows, XX.n_cols) * lambda * (1 - eta);
+    const mat XX_I = XX + speye(XX.n_rows, XX.n_cols) * lambda * (1 - eta);
     K = join_vert(join_horiz(XX_I, -XX), join_horiz(-XX, XX_I));
 
     const vec Xy = X.t() * y;
@@ -41,17 +41,16 @@ GLM::GLM(const mat &X, const vec &y, const double lambda, const double eta)
 }
 
 void GLM::solve(vec &z, const size_t max_iterations){
-    
+
+    CG cg_solver;
+
     vec g_A;
-    vec p;
-    vec r;
     vec delz_A;
+    vec delz = zeros<vec>(z.n_rows);
+
     uvec A_prev;
     mat K_A;
 
-    vec delz = zeros<vec>(z.n_rows);
-    CG cg_solver;
-    
     for (size_t i = 0; i < max_iterations; i++){
         const vec g = g_start + K * z;
 
@@ -84,8 +83,8 @@ void GLM::solve(vec &z, const size_t max_iterations){
         const uvec D = GLM::vintersection(neg_delz, pos_z);
         if (D.n_rows == 0) break;
 
-        const vec alphas = -z(D) / delz(D);
-        double alpha = min(alphas);
+        const vec alphas = z(D) / delz(D);
+        double alpha = min(-max(alphas), 1);
 
         assert(alpha > 0);
         delz(A) *= alpha;

@@ -7,7 +7,7 @@ public:
         const bool restart, const size_t iterations=2);
 
 private:
-    const double RESIDUAL_TOL = 1e-14;
+    const double RESIDUAL_TOL = 1e-12;
     double prev_r_sq_sum;
     arma::vec p, r;
 };
