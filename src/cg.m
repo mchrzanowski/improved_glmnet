@@ -8,7 +8,7 @@ function [x, p, r] = cg(A, b, x, restart, iters, p, r)
     for i=1:iters
         Ap = A * p;
         old_r_sum = dot(r, r);
-        if norm(old_r_sum) < 1e-14
+        if old_r_sum <= 1e-12
             break;
         end
         alpha = old_r_sum / (p' * Ap);

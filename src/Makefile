@@ -10,14 +10,21 @@ LDFLAGS = -larmadillo -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5
 # In this section, you list the files that are part of the project.
 # If you add/change names of header/source files, here is where you
 # edit the Makefile.
-SOURCES = main.cc cg.cc glm.cc
+SOURCES = cg.cc glm.cc matlab_validation.cc
 HEADERS = $(SOURCES:.cc=.h)
 OBJECTS = $(SOURCES:.cc=.o)
 TARGETS = glmnet.out
+TESTS = matlab_validation.out
 
 default: $(TARGETS)
 
+test: $(TESTS)
+
 glmnet.out: $(OBJECTS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+
+matlab_validation.out: $(OBJECTS)
+	$(CXX) $(CXXFLAGS) -MM matlab_validation.cc > Makefile.dependencies
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
 # In make's default rules, a .o automatically depends on its .cc file

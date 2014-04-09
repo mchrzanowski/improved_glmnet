@@ -37,7 +37,6 @@ void cg_test(){
 void glm_test(int size=500){
 
     mat A = randn<mat>(size, size);
-    //A += A.t() + size * eye(size, size);
     vec b = randn<vec>(size);
     
     double eta = 0.9;

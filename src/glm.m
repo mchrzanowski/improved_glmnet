@@ -39,7 +39,7 @@ function z = glm(X, y, lambda, eta, z, iters)
         end
         A_prev = A;
         
-        if norm(g_A) <= 1e-14
+        if norm(g_A) <= 1e-4
             break;
         end
         

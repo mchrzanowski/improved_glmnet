@@ -54,9 +54,6 @@ void GLM::solve(vec &z, const size_t max_iterations){
     for (size_t i = 0; i < max_iterations; i++){
         const vec g = g_start + K * z;
 
-        // ask about this...
-        if (norm(g, 2) < 1e-18) break;
-
         const uvec nonpos_g = find(g <= 0);
         const uvec pos_z = find(z > 0);
         const uvec A = GLM::vunion(nonpos_g, pos_z);
@@ -75,6 +72,8 @@ void GLM::solve(vec &z, const size_t max_iterations){
         }
         A_prev = A;
 
+        if (norm(g_A, 2) <= 1e-4) break;
+
         delz.fill(0);
         delz(A) += delz_A;
 
@@ -84,7 +83,7 @@ void GLM::solve(vec &z, const size_t max_iterations){
         if (D.n_rows == 0) break;
 
         const vec alphas = z(D) / delz(D);
-        double alpha = min(-max(alphas), 1);
+        double alpha = min(-max(alphas), 1.0);
 
         assert(alpha > 0);
         delz(A) *= alpha;
