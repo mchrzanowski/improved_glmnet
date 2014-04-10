@@ -17,7 +17,7 @@ const double eta, const size_t size, const size_t iterations){
     vec w = z.subvec(0, size - 1) - z.subvec(size, 2 * size - 1);
 
     double error = 0.5 * sum(square(b - A * w))
-        + lambda * (eta * sum(abs(w)) + 0.5 * (1 - eta) * sum(square(w)));
+        + lambda * (eta * norm(w, 1) + 0.5 * (1 - eta) * sum(square(w)));
     cout << "Error: " << error << endl;
 }
 

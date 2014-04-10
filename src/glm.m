@@ -30,12 +30,12 @@ function z = glm(X, y, lambda, eta, z, iters)
         end
         
         if A_size == size(A_prev, 1) && size(setdiff(A, A_prev), 1) == 0
-            [delz_A, p, r] = cg(K_A, g_A, delz_A, 0, 3, p, r);
+            [delz_A, p, r] = cg(K_A, g_A, delz_A, 0, 5, p, r);
         else
             K_A = K(A, A);
             delz_A = zeros(A_size, 1);
             g_A = -g(A);
-            [delz_A, p, r] = cg(K_A, g_A, delz_A, 1, 3, p, r);
+            [delz_A, p, r] = cg(K_A, g_A, delz_A, 1, 5, p, r);
         end
         A_prev = A;
         

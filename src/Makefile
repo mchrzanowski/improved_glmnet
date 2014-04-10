@@ -4,13 +4,14 @@ CXX = g++
 RM = rm -f
 
 # flags
-CXXFLAGS = -g -std=c++0x -Wall -O3 -I/usr/include -I/usr/local/include -L/usr/local/lib -L/opt/intel/lib/intel64 -L/opt/intel/mkl/lib/intel64
+CXXFLAGS = -pg -g -std=c++0x -Wall -O3 -I/usr/include -I/usr/local/include \
+	-L/usr/local/lib -L/opt/intel/lib/intel64 -L/opt/intel/mkl/lib/intel64
 LDFLAGS = -larmadillo -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5
 
 # In this section, you list the files that are part of the project.
 # If you add/change names of header/source files, here is where you
 # edit the Makefile.
-SOURCES = cg.cc glm.cc matlab_validation.cc
+SOURCES = cg.cc glm.cc
 HEADERS = $(SOURCES:.cc=.h)
 OBJECTS = $(SOURCES:.cc=.o)
 TARGETS = glmnet.out
@@ -20,11 +21,10 @@ default: $(TARGETS)
 
 test: $(TESTS)
 
-glmnet.out: $(OBJECTS)
+glmnet.out: $(OBJECTS) main.cc
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
-matlab_validation.out: $(OBJECTS)
-	$(CXX) $(CXXFLAGS) -MM matlab_validation.cc > Makefile.dependencies
+matlab_validation.out: $(OBJECTS) matlab_validation.cc
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
 # In make's default rules, a .o automatically depends on its .cc file
@@ -43,7 +43,7 @@ Makefile.dependencies:: $(SOURCES) $(HEADERS)
 .PHONY: clean spartan
 
 clean:
-	$(RM) $(TARGETS) $(OBJECTS) core Makefile.dependencies
+	$(RM) $(TARGETS) $(OBJECTS) $(TESTS) Makefile.dependencies
 
 spartan: clean
 	$(RM) *~
