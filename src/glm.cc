@@ -84,9 +84,11 @@ void GLM::solve(vec &z, const size_t max_iterations){
     size_t i;
     vec delz = zeros<vec>(z.n_rows);
 
+    vec g(g_start.n_rows);
+
     for (i = 0; i < max_iterations; i++){
 
-        vec g = g_start + K * z;
+        g = g_start + K * z;
 
         const uvec nonpos_g = find(g <= 0);
         const uvec pos_z = find(z > 0);
@@ -100,7 +102,7 @@ void GLM::solve(vec &z, const size_t max_iterations){
         }
         else {
             K_A = K(A, A);  // this is SURPRISINGLY fast.
-            delz_A = zeros<vec>(A_size);
+            delz_A.zeros(A_size);
             g_A = -g(A);
             cg_solver.solve(K_A, g_A, delz_A, true, 3);
         }
@@ -108,7 +110,7 @@ void GLM::solve(vec &z, const size_t max_iterations){
 
         if (norm(g_A, 2) <= 1e-4) break;
 
-        delz.fill(0);
+        delz.zeros();
         delz(A) = delz_A;
 
         // select step size...
@@ -122,6 +124,15 @@ void GLM::solve(vec &z, const size_t max_iterations){
 
         z(A) += delz_A * alpha;
         z.transform([] (double val) { return val > 0 ? val : 0; });
+
+        // force one of indicies of z to be active....
+        const size_t n_half = z.n_rows / 2;
+        vec w = z.subvec(0, n_half-1) - z.subvec(n_half, 2*n_half-1);
+        uvec neg_w = find(w < 0);
+        uvec pos_w = find(w > 0);
+        z.zeros();
+        z(neg_w + n_half) = -w(neg_w);
+        z(pos_w) = w(pos_w);
     }
 
     cout << "Iterations required: " << i << endl;
