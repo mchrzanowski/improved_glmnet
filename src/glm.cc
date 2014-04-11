@@ -73,26 +73,26 @@ void inline GLM::create_K_A(mat &K_A, const uvec &A, const size_t divider){
 
 void GLM::solve(vec &z, const size_t max_iterations){
 
+    const size_t n_half = z.n_rows / 2;
+
     CG cg_solver;
 
-    vec g_A;
-    vec delz_A;
-
-    uvec A_prev;
     mat K_A;
 
     size_t i;
-    vec delz = zeros<vec>(z.n_rows);
 
-    vec g(g_start.n_rows);
+    uvec A, A_prev, neg_w(n_half), pos_w(n_half),
+        nonpos_g(z.n_rows), pos_z(z.n_rows);
+
+    vec delz(z.n_rows), delz_A, g(g_start.n_rows), g_A, w(n_half);
 
     for (i = 0; i < max_iterations; i++){
 
         g = g_start + K * z;
 
-        const uvec nonpos_g = find(g <= 0);
-        const uvec pos_z = find(z > 0);
-        const uvec A = vunion(nonpos_g, pos_z);
+        nonpos_g = find(g <= 0);
+        pos_z = find(z > 0);
+        A = vunion(nonpos_g, pos_z);
         const size_t A_size = A.n_rows;
 
         if (A_size == 0) break;
@@ -108,7 +108,8 @@ void GLM::solve(vec &z, const size_t max_iterations){
         }
         A_prev = A;
 
-        if (norm(g_A, 2) <= 1e-4) break;
+        //cout << i << " : " << norm(g_A) << endl;
+        if (norm(g_A, 2) <= 1) break;
 
         delz.zeros();
         delz(A) = delz_A;
@@ -126,11 +127,11 @@ void GLM::solve(vec &z, const size_t max_iterations){
         z.transform([] (double val) { return val > 0 ? val : 0; });
 
         // force one of indicies of z to be active....
-        const size_t n_half = z.n_rows / 2;
-        vec w = z.subvec(0, n_half-1) - z.subvec(n_half, 2*n_half-1);
-        uvec neg_w = find(w < 0);
-        uvec pos_w = find(w > 0);
-        z.zeros();
+        w = z.subvec(0, n_half-1) - z.subvec(n_half, 2*n_half-1);
+        neg_w = find(w < 0);
+        pos_w = find(w > 0);
+        z(neg_w) *= 0;
+        z(pos_w + n_half) *= 0;
         z(neg_w + n_half) = -w(neg_w);
         z(pos_w) = w(pos_w);
     }
