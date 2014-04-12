@@ -39,11 +39,11 @@ GLM::GLM(const mat &X, const vec &y, const double lambda, const double eta)
     
     // construct Hessian matrix once and for all.
     const mat XXT = X.t();
-    const mat XX = XXT * X;
+    XX = XXT * X;
     mat XX_I = XX + speye(XX.n_rows, XX.n_cols) * lambda * (1 - eta);
     K = join_vert(join_horiz(XX_I, -XX), join_horiz(-XX, XX_I));
 
-    const vec Xy = XXT * y;
+    const colvec Xy = XXT * y;
     g_start = join_vert(-Xy, Xy) + lambda * eta;
 }
 
@@ -78,7 +78,7 @@ void inline GLM::create_K_A(mat &K_A, const uvec &A, const size_t divider){
 }
 */
 
-void GLM::solve(vec &z, const size_t max_iterations){
+void GLM::solve(colvec &z, const size_t max_iterations){
 
     const size_t n_half = z.n_rows / 2;
 
@@ -88,16 +88,21 @@ void GLM::solve(vec &z, const size_t max_iterations){
 
     size_t i;
 
-    size_t wins = 0;
-
     uvec A, A_prev, D, neg_w(n_half), pos_w(n_half),
         neg_delz, nonpos_g(z.n_rows), pos_z(z.n_rows);
 
-    vec delz(z.n_rows), delz_A, g(g_start.n_rows), g_A, w(n_half);
+    colvec delz(z.n_rows), delz_A, g(g_start.n_rows), g_A, w(n_half);
 
     for (i = 0; i < max_iterations; i++){
 
-        g = g_start + K * z;
+        const colvec z_top = z.subvec(0, n_half-1);
+        const colvec z_bottom = z.subvec(n_half, 2*n_half-1);
+        const colvec g_half = XX * (z_top - z_bottom);
+
+        g = g_start;
+        g.subvec(0, n_half-1) += g_half + z_top * lambda * (1 - eta);
+        g.subvec(n_half, 2*n_half-1) += -g_half + z_bottom * lambda * (1 - eta);
+
         nonpos_g = find(g <= 0);
         pos_z = find(z > 0);
         vunion(nonpos_g, pos_z, A);
@@ -134,9 +139,9 @@ void GLM::solve(vec &z, const size_t max_iterations){
             delz_A.zeros(A_size);
             g_A = -g(A);
             cg_solver.solve(K_A, g_A, delz_A, true, 3);
+            A_prev = A;
         }
-        A_prev = A;
-
+        
         if (norm(g_A, 2) <= 1) break;
 
         delz.zeros();
@@ -151,8 +156,8 @@ void GLM::solve(vec &z, const size_t max_iterations){
         double alpha = min(-max(alphas), 1.0);
         assert(alpha > 0);
 
-        z(A) += delz_A * alpha;
-        z.transform([] (double val) { return val > 0 ? val : 0; });
+        z += delz * alpha;
+        z.transform([] (double val) { return max(val, 0.); });
 
         // force one of indicies of z to be active....
         w = z.subvec(0, n_half-1) - z.subvec(n_half, 2*n_half-1);
@@ -164,6 +169,5 @@ void GLM::solve(vec &z, const size_t max_iterations){
         z(pos_w) = w(pos_w);
     }
 
-    cout << "Wins: " << wins << endl;
     cout << "Iterations required: " << i << endl;
 }

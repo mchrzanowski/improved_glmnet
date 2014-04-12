@@ -5,7 +5,7 @@ class GLM {
 
 public:
     GLM(const arma::mat &X, const arma::vec &y,const double lambda, const double eta);
-    void solve(arma::vec &z, const size_t max_iterations);
+    void solve(arma::colvec &z, const size_t max_iterations);
 
 private:
     template<typename T, template <typename> class ARMA_VECTOR_TYPE>
@@ -23,7 +23,7 @@ private:
     //void create_Kz(arma::vec &g, arma::vec &z);
     //void create_K_A(arma::mat &K_A, const arma::uvec &A, const size_t n_half);
 
-    arma::vec g_start;
-    arma::mat K;
+    arma::colvec g_start;
+    arma::mat XX, K;
     double eta, lambda;
 };
