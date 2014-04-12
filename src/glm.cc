@@ -158,8 +158,8 @@ void GLM::solve(vec &z, const size_t max_iterations){
         w = z.subvec(0, n_half-1) - z.subvec(n_half, 2*n_half-1);
         neg_w = find(w < 0);
         pos_w = find(w > 0);
-        z(neg_w) *= 0;
-        z(pos_w + n_half) *= 0;
+        z(neg_w).zeros();
+        z(pos_w + n_half).zeros();
         z(neg_w + n_half) = -w(neg_w);
         z(pos_w) = w(pos_w);
     }
