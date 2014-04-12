@@ -5,23 +5,30 @@ using namespace arma;
 using namespace std;
 
 template<typename T, template <typename> class ARMA_VECTOR_TYPE>
-ARMA_VECTOR_TYPE<T> GLM::vunion( ARMA_VECTOR_TYPE<T> first,
-    ARMA_VECTOR_TYPE<T> second) {
+void GLM::vunion(ARMA_VECTOR_TYPE<T> &first,
+    ARMA_VECTOR_TYPE<T> &second, ARMA_VECTOR_TYPE<T> &result) {
     vector<T> output;
     set_union(first.begin(), first.end(), second.begin(), second.end(),
                     back_inserter(output) ) ;
-    ARMA_VECTOR_TYPE<T> result = conv_to<ARMA_VECTOR_TYPE<T>>::from(output);
-    return result;
+    result = conv_to<ARMA_VECTOR_TYPE<T>>::from(output);
 }
 
 template<typename T, template <typename> class ARMA_VECTOR_TYPE>
-ARMA_VECTOR_TYPE<T> GLM::vintersection( ARMA_VECTOR_TYPE<T> first,
-    ARMA_VECTOR_TYPE<T> second) {
+void GLM::vintersection(ARMA_VECTOR_TYPE<T> &first,
+    ARMA_VECTOR_TYPE<T> &second, ARMA_VECTOR_TYPE<T> &result) {
     vector<T> output;
     set_intersection(first.begin(), first.end(), second.begin(), second.end(),
                     back_inserter(output) ) ;
-    ARMA_VECTOR_TYPE<T> result = conv_to<ARMA_VECTOR_TYPE<T>>::from(output);
-    return result;
+    result = conv_to<ARMA_VECTOR_TYPE<T>>::from(output);
+}
+
+template<typename T, template <typename> class ARMA_VECTOR_TYPE>
+void GLM::vdifference(ARMA_VECTOR_TYPE<T> &first,
+    ARMA_VECTOR_TYPE<T> &second, ARMA_VECTOR_TYPE<T> &result) {
+    vector<T> output;
+    set_difference(first.begin(), first.end(), second.begin(), second.end(),
+                    back_inserter(output) ) ;
+    result = conv_to<ARMA_VECTOR_TYPE<T>>::from(output);
 }
 
 GLM::GLM(const mat &X, const vec &y, const double lambda, const double eta)
@@ -33,7 +40,7 @@ GLM::GLM(const mat &X, const vec &y, const double lambda, const double eta)
     // construct Hessian matrix once and for all.
     const mat XXT = X.t();
     const mat XX = XXT * X;
-    const mat XX_I = XX + speye(XX.n_rows, XX.n_cols) * lambda * (1 - eta);
+    mat XX_I = XX + speye(XX.n_rows, XX.n_cols) * lambda * (1 - eta);
     K = join_vert(join_horiz(XX_I, -XX), join_horiz(-XX, XX_I));
 
     const vec Xy = XXT * y;
@@ -81,25 +88,47 @@ void GLM::solve(vec &z, const size_t max_iterations){
 
     size_t i;
 
-    uvec A, A_prev, neg_w(n_half), pos_w(n_half),
-        nonpos_g(z.n_rows), pos_z(z.n_rows);
+    size_t wins = 0;
+
+    uvec A, A_prev, D, neg_w(n_half), pos_w(n_half),
+        neg_delz, nonpos_g(z.n_rows), pos_z(z.n_rows);
 
     vec delz(z.n_rows), delz_A, g(g_start.n_rows), g_A, w(n_half);
 
     for (i = 0; i < max_iterations; i++){
 
         g = g_start + K * z;
-
         nonpos_g = find(g <= 0);
         pos_z = find(z > 0);
-        A = vunion(nonpos_g, pos_z);
+        vunion(nonpos_g, pos_z, A);
         const size_t A_size = A.n_rows;
 
         if (A_size == 0) break;
 
+        //uvec lol;
+        //vintersection(A_prev, A, lol);
+
         if (A.n_rows == A_prev.n_rows && accu(A == A_prev) == A_size){
             cg_solver.solve(K_A, g_A, delz_A, false, 3);
         }
+        /*else if (lol.n_rows == A.n_rows) {
+
+            uvec diff;
+            vdifference(A_prev, lol, diff);
+
+            int A_index = A_prev.n_rows - 1;
+            for (int s = diff.n_rows - 1; s >= 0 && A_index >= 0; s--){
+                while (diff(s) != A_prev(A_index)) A_index--;
+                K_A.shed_row(s);
+                K_A.shed_col(s);
+                delz_A.shed_row(s);
+                g_A.shed_row(s);
+                cg_solver.getP().shed_row(s);
+                cg_solver.getR().shed_row(s);
+            }
+
+            cg_solver.solve(K_A, g_A, delz_A, false, 3);
+        }*/
         else {
             K_A = K(A, A);  // this is SURPRISINGLY fast.
             delz_A.zeros(A_size);
@@ -108,15 +137,14 @@ void GLM::solve(vec &z, const size_t max_iterations){
         }
         A_prev = A;
 
-        //cout << i << " : " << norm(g_A) << endl;
         if (norm(g_A, 2) <= 1) break;
 
         delz.zeros();
         delz(A) = delz_A;
 
         // select step size...
-        const uvec neg_delz = A(find(delz_A < 0));
-        const uvec D = vintersection(neg_delz, pos_z);
+        neg_delz = A(find(delz_A < 0));
+        vintersection(neg_delz, pos_z, D);
         if (D.n_rows == 0) break;
 
         const vec alphas = z(D) / delz(D);
@@ -136,5 +164,6 @@ void GLM::solve(vec &z, const size_t max_iterations){
         z(pos_w) = w(pos_w);
     }
 
+    cout << "Wins: " << wins << endl;
     cout << "Iterations required: " << i << endl;
 }
