@@ -91,17 +91,19 @@ void GLM::solve(colvec &z, const size_t max_iterations){
     uvec A, A_prev, D, neg_w(n_half), pos_w(n_half),
         neg_delz, nonpos_g(z.n_rows), pos_z(z.n_rows);
 
-    colvec delz(z.n_rows), delz_A, g(g_start.n_rows), g_A, w(n_half);
+    colvec delz(z.n_rows), delz_A, g(g_start.n_rows), g_A;
+
+    colvec u = z.subvec(0, n_half-1).unsafe_col(0);
+    colvec l = z.subvec(n_half, 2*n_half-1).unsafe_col(0);
+    colvec w = u - l;
 
     for (i = 0; i < max_iterations; i++){
 
-        const colvec z_top = z.subvec(0, n_half-1);
-        const colvec z_bottom = z.subvec(n_half, 2*n_half-1);
-        const colvec g_half = XX * (z_top - z_bottom);
+        const colvec g_half = XX * w;
 
         g = g_start;
-        g.subvec(0, n_half-1) += g_half + z_top * lambda * (1 - eta);
-        g.subvec(n_half, 2*n_half-1) += -g_half + z_bottom * lambda * (1 - eta);
+        g.subvec(0, n_half-1) += g_half + u * lambda * (1 - eta);
+        g.subvec(n_half, 2*n_half-1) += -g_half + l * lambda * (1 - eta);
 
         nonpos_g = find(g <= 0);
         pos_z = find(z > 0);
@@ -160,7 +162,7 @@ void GLM::solve(colvec &z, const size_t max_iterations){
         z.transform([] (double val) { return max(val, 0.); });
 
         // force one of indicies of z to be active....
-        w = z.subvec(0, n_half-1) - z.subvec(n_half, 2*n_half-1);
+        w = u - l; 
         neg_w = find(w < 0);
         pos_w = find(w > 0);
         z(neg_w).zeros();
