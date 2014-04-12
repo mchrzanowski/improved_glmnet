@@ -37,46 +37,21 @@ GLM::GLM(const mat &X, const vec &y, const double lambda, const double eta)
     assert(eta > 0 && eta <= 1);
     assert(lambda > 0);
     
-    // construct Hessian matrix once and for all.
     const mat XXT = X.t();
     XX = XXT * X;
-    mat XX_I = XX + speye(XX.n_rows, XX.n_cols) * lambda * (1 - eta);
-    K = join_vert(join_horiz(XX_I, -XX), join_horiz(-XX, XX_I));
 
     const colvec Xy = XXT * y;
-    g_start = join_vert(-Xy, Xy) + lambda * eta;
+    g_start.zeros(2*y.n_rows);
+    g_start.subvec(0, y.n_rows-1) = -Xy + lambda * eta;
+    g_start.subvec(y.n_rows, 2*y.n_rows-1) = Xy + lambda * eta;
 }
 
-/*
-void GLM::create_Kz(vec &g, vec &z){
-    uword n = z.n_rows;
-    uword n_half = n / 2;
-    const vec z_top = z.rows(0, n_half - 1);
-    const vec z_bottom = z.rows(n_half, n - 1);
-    g.rows(0, n_half-1) = XX_I * z_top - XX * z_bottom;
-    g.rows(n_half, n-1) = -XX * z_top + XX_I * z_bottom;
+void GLM::create_K_A(mat &K_A, const uvec &A, const size_t divider){
+    
+
+
 }
 
-void inline GLM::create_K_A(mat &K_A, const uvec &A, const size_t divider){
-    const uvec top = find(A < divider);
-    const uvec bottom = find(A >= divider);
-
-    const uvec A_top = static_cast<uvec>(A(top));
-    const uvec A_bottom = static_cast<uvec>(A(bottom) - divider);
-
-    //const mat system = join_vert(join_horiz(XX_I(top, top), -XX(top, bottom - n_half)), 
-    //    join_horiz(-XX(bottom - n_half, top), XX_I(bottom - n_half, bottom - n_half)));
-
-    //K_A = system;
-    //cout << K_A.n_rows << "\t" << K_A.n_cols << endl;
-    K_A(top, top) = XX_I(A_top, A_top);
-    K_A(top, bottom) = -XX(A_top, A_bottom);
-    K_A(bottom, top) = -XX(A_bottom, A_top);
-    K_A(bottom, bottom) = XX_I(A_bottom, A_bottom);
-
-    //cout << K_A.n_rows << "\t" << K_A.n_cols << endl;
-}
-*/
 
 void GLM::solve(colvec &z, const size_t max_iterations){
 
@@ -93,9 +68,12 @@ void GLM::solve(colvec &z, const size_t max_iterations){
 
     colvec delz(z.n_rows), delz_A, g(g_start.n_rows), g_A;
 
-    colvec u = z.subvec(0, n_half-1).unsafe_col(0);
-    colvec l = z.subvec(n_half, 2*n_half-1).unsafe_col(0);
+    const colvec u = z.subvec(0, n_half-1).unsafe_col(0);
+    const colvec l = z.subvec(n_half, 2*n_half-1).unsafe_col(0);
     colvec w = u - l;
+
+    mat x1, x2, x4;
+    uword bottom = 0;
 
     for (i = 0; i < max_iterations; i++){
 
@@ -116,7 +94,8 @@ void GLM::solve(colvec &z, const size_t max_iterations){
         //vintersection(A_prev, A, lol);
 
         if (A.n_rows == A_prev.n_rows && accu(A == A_prev) == A_size){
-            cg_solver.solve(K_A, g_A, delz_A, false, 3);
+            //cg_solver.solve(K_A, g_A, delz_A, false, 3);
+            cg_solver.solve(x1, x2, x4, g_A, delz_A, bottom, true, 3);
         }
         /*else if (lol.n_rows == A.n_rows) {
 
@@ -137,10 +116,44 @@ void GLM::solve(colvec &z, const size_t max_iterations){
             cg_solver.solve(K_A, g_A, delz_A, false, 3);
         }*/
         else {
-            K_A = K(A, A);  // this is SURPRISINGLY fast.
+            
+            //wall_clock timer;
+            //mat old;
+
+            //timer.tic();
+            const uvec top = find(A < n_half);
+            bottom = top(top.n_rows-1) + 1;
+
+            const uvec A_top = static_cast<uvec>(A(top));
+            const uvec A_bottom = static_cast<uvec>(A.subvec(bottom, A.n_rows-1) - n_half);
+
+            x1 = XX(A_top, A_top) + speye(A_top.n_rows, A_top.n_rows) * lambda * (1-eta);
+            x2 = -XX(A_top, A_bottom);
+            x4 = XX(A_bottom, A_bottom) + speye(A_bottom.n_rows, A_bottom.n_rows) * lambda * (1-eta);
+            //double new_way = timer.toc();
+
+            //timer.tic();
+            //K_A = K(A, A);
+            //double old_way = timer.toc();
+
+            //cout << "Matrix creation: " << new_way << "\t" << old_way << "\t" << new_way - old_way << endl;
+
+
             delz_A.zeros(A_size);
             g_A = -g(A);
-            cg_solver.solve(K_A, g_A, delz_A, true, 3);
+            //timer.tic();
+            //cg_solver.solve(K_A, g_A, delz_A, true, 3);
+            //old_way = timer.toc();
+
+            //vec new_delz_A = zeros<vec>(A_size);
+            //timer.tic();
+            cg_solver.solve(x1, x2, x4, g_A, delz_A, bottom, true, 3);
+            //new_way = timer.toc();
+
+            //cout << "CG: " << new_way << "\t" << old_way << "\t" << new_way - old_way << endl;
+            //cout << "CG NOrm: " << norm(new_delz_A - delz_A) << endl;
+
+
             A_prev = A;
         }
         
@@ -158,7 +171,7 @@ void GLM::solve(colvec &z, const size_t max_iterations){
         double alpha = min(-max(alphas), 1.0);
         assert(alpha > 0);
 
-        z += delz * alpha;
+        z(A) += delz_A * alpha;
         z.transform([] (double val) { return max(val, 0.); });
 
         // force one of indicies of z to be active....

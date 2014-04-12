@@ -5,13 +5,13 @@ using namespace arma;
 void CG::solve(const mat &A, const vec &b, vec &x,
     const bool restart, const size_t iterations) {
 
-	double alpha, beta, r_sq_sum;
+    double alpha, beta, r_sq_sum;
 
-	if (restart) {
-		r = A * x - b;
-		p = -r;
-		prev_r_sq_sum = dot(r, r);
-	}
+    if (restart) {
+        r = A * x - b;
+        p = -r;
+        prev_r_sq_sum = dot(r, r);
+    }
 
     for (size_t i = 0; i < iterations && prev_r_sq_sum > RESIDUAL_TOL; i++){
         const vec Ap = A * p;
@@ -19,11 +19,57 @@ void CG::solve(const mat &A, const vec &b, vec &x,
 
         x += alpha * p;
         r += alpha * Ap;
-		r_sq_sum = dot(r, r);
+        r_sq_sum = dot(r, r);
 
         beta = r_sq_sum / prev_r_sq_sum;
         p *= beta;
         p -= r;
+        prev_r_sq_sum = r_sq_sum;
+    }
+}
+
+void CG::solve(const mat &x1, 
+        const mat &x2,
+        const mat &x4,
+        const vec &b,
+        vec &x,
+        const uword half, 
+        const bool restart,
+        const size_t iterations){
+
+	double alpha, beta, r_sq_sum;
+
+    vec x_top = x.subvec(0, half-1).unsafe_col(0);
+    vec x_bottom = x.subvec(half, x.n_rows-1).unsafe_col(0);
+
+    const vec b_top = b.subvec(0, half-1).unsafe_col(0);
+    const vec b_bottom = b.subvec(half, x.n_rows-1).unsafe_col(0);
+
+	if (restart) {
+		r_top = x1 * x_top + x2 * x_bottom - b_top;
+        r_bottom = (x_top.t() * x2).t() + x4 * x_bottom - b_bottom;
+		p_top = -r_top;
+        p_bottom = -r_bottom;
+		prev_r_sq_sum = dot(r_top, r_top) + dot(r_bottom, r_bottom);
+	}
+
+    for (size_t i = 0; i < iterations && prev_r_sq_sum > RESIDUAL_TOL; i++){
+        const vec Ap_top = x1 * p_top + x2 * p_bottom;
+        const vec Ap_bottom = (p_top.t() * x2).t() + x4 * p_bottom;
+
+        alpha = prev_r_sq_sum / (dot(p_top, Ap_top) + dot(p_bottom, Ap_bottom));
+
+        x_top += alpha * p_top;
+        x_bottom += alpha * p_bottom;
+        r_top += alpha * Ap_top;
+        r_bottom += alpha * Ap_bottom;
+		r_sq_sum = dot(r_top, r_top) + dot(r_bottom, r_bottom);
+
+        beta = r_sq_sum / prev_r_sq_sum;
+        p_top *= beta;
+        p_bottom *= beta;
+        p_top -= r_top;
+        p_bottom -= r_bottom;
 		prev_r_sq_sum = r_sq_sum;
     }
 }

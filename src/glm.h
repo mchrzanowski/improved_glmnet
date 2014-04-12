@@ -20,10 +20,9 @@ private:
     void vdifference(ARMA_VECTOR_TYPE<T> &first, ARMA_VECTOR_TYPE<T> &second,
         ARMA_VECTOR_TYPE<T> &result);
 
-    //void create_Kz(arma::vec &g, arma::vec &z);
-    //void create_K_A(arma::mat &K_A, const arma::uvec &A, const size_t n_half);
+    void create_K_A(arma::mat &K_A, const arma::uvec &A, const size_t n_half);
 
     arma::colvec g_start;
-    arma::mat XX, K;
+    arma::mat XX;
     double eta, lambda;
 };
