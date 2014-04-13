@@ -1,6 +1,9 @@
 #include <armadillo>
 #include "glm.h"
 
+/*
+ A class to deal with fat (m > n) matrices
+*/
 class FatGLM : public GLM {
 
 public:
@@ -9,9 +12,9 @@ public:
     void solve(arma::colvec &z, const size_t max_iterations);
 
 private:
-    void createMatrixChunks(arma::mat &x1_pre, arma::mat &x1_post,
+    void createMatrixChunks(arma::mat &x1,
         arma::mat &x2_pre, arma::mat &x2_post,
-        arma::mat &x4_pre, arma::mat &x4_post, const arma::uvec &A,
+        const arma::uvec &A,
         const size_t n_half, arma::uword &divider);
 
     arma::colvec g_start;

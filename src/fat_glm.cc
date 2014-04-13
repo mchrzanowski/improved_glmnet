@@ -23,8 +23,8 @@ FatGLM::FatGLM(const mat &X_, const vec &y, const double lambda,
     g_start.subvec(n_half, n-1) = Xy + lambda * eta;
 }
 
-void FatGLM::createMatrixChunks(mat &x1_pre, mat &x1_post, mat &x2_pre,
-    mat &x2_post, mat &x4_pre, mat &x4_post, const uvec &A,
+void FatGLM::createMatrixChunks(mat &x1, mat &x2_pre,
+    mat &x2_post, const uvec &A,
     const size_t n_half, uword &divider){
     
     const uvec top = find(A < n_half);
@@ -34,14 +34,11 @@ void FatGLM::createMatrixChunks(mat &x1_pre, mat &x1_post, mat &x2_pre,
     const uvec A_bottom = static_cast<uvec>(A.subvec(divider,
         A.n_rows-1) - n_half);
 
-    x1_pre = X.cols(A_top);
-    x1_post = XT.rows(A_top);
+    x1 = X.cols(A_top);
     
     x2_pre = X.cols(A_bottom);
     x2_post = -XT.rows(A_top);
-    
-    x4_pre = X.cols(A_bottom);
-    x4_post = XT.rows(A_bottom);
+
 }
 
 void FatGLM::solve(colvec &z, const size_t max_iterations){
@@ -59,7 +56,7 @@ void FatGLM::solve(colvec &z, const size_t max_iterations){
     const colvec l = z.subvec(n_half, n-1).unsafe_col(0);
     colvec w = u - l;
 
-    mat x1_pre, x1_post, x2_pre, x2_post, x4_pre, x4_post;
+    mat x1, x2_pre, x2_post;
     uword divider = 0;
 
     for (i = 0; i < max_iterations; i++){
@@ -77,8 +74,8 @@ void FatGLM::solve(colvec &z, const size_t max_iterations){
         if (A.n_rows == 0) break;
 
         if (A.n_rows == A_prev.n_rows && accu(A == A_prev) == A.n_rows){
-            cg_solver.solve(x1_pre, x1_post, x2_pre, x2_post,
-                x4_pre, x4_post, g_A, delz_A, divider, true, 3);
+            cg_solver.solve(x1, x2_pre, x2_post,
+                g_A, delz_A, divider, multiplier, true, 3);
         }
         /*else if (lol.n_rows == A.n_rows) {
 
@@ -99,13 +96,13 @@ void FatGLM::solve(colvec &z, const size_t max_iterations){
             cg_solver.solve(K_A, g_A, delz_A, false, 3);
         }*/
         else {
-            createMatrixChunks(x1_pre, x1_post, x2_pre,
-                x2_post, x4_pre, x4_post, A, n_half, divider);
+            createMatrixChunks(x1, x2_pre,
+                x2_post, A, n_half, divider);
             delz_A.zeros(A.n_rows);
             g_A = -g(A);
             
-            cg_solver.solve(x1_pre, x1_post, x2_pre, x2_post,
-                x4_pre, x4_post, g_A, delz_A, divider, true, 3);
+            cg_solver.solve(x1, x2_pre, x2_post,
+                g_A, delz_A, divider, multiplier, true, 3);
             
             A_prev = A;
         }

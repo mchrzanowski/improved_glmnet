@@ -2,12 +2,9 @@
 
 using namespace arma;
 
-void CG::solve(const mat &x1_pre, 
-            const mat &x1_post, 
+void CG::solve(const mat &x1, 
             const mat &x2_pre,
             const mat &x2_post,
-            const mat &x4_pre,
-            const mat &x4_post,
             const vec &b,
             vec &x,
             const uword half, 
@@ -22,10 +19,12 @@ void CG::solve(const mat &x1_pre,
     const vec b_bottom = b.subvec(half, x.n_rows-1).unsafe_col(0);
 
     if (restart) {
-        r_top = x1_post * (x1_pre * x_top) + 
+        r_top = x1.t() * (x1 * x_top) + 
             x2_post * (x2_pre * x_bottom) - b_top + x_top * multiplier;
+        
         r_bottom = ((x_top.t() * x2_post) * x2_pre).t() + 
-            x4_post * (x4_pre * x_bottom) - b_bottom + x_bottom * multiplier;
+            x2_pre.t() * (x2_pre * x_bottom) - b_bottom + x_bottom * multiplier;
+        
         p_top = -r_top;
         p_bottom = -r_bottom;
         prev_r_sq_sum = dot(r_top, r_top) + dot(r_bottom, r_bottom);
@@ -35,11 +34,11 @@ void CG::solve(const mat &x1_pre,
     colvec Ap_top(half), Ap_bottom(half);
 
     for (size_t i = 0; i < iterations && prev_r_sq_sum > RESIDUAL_TOL; i++){
-        Ap_top = x1_post * (x1_pre * p_top) + 
+        Ap_top = x1.t() * (x1 * p_top) + 
             x2_post * (x2_pre * p_bottom) + p_top * multiplier;
         
         Ap_bottom = ((p_top.t() * x2_post) * x2_pre).t() + 
-            x4_post * (x4_pre * p_bottom) + p_bottom * multiplier;
+            x2_pre.t() * (x2_pre * p_bottom) + p_bottom * multiplier;
 
         alpha = prev_r_sq_sum / (dot(p_top, Ap_top) + dot(p_bottom, Ap_bottom));
 
@@ -93,7 +92,6 @@ void CG::solve(const mat &x1,
         const uword half, 
         const bool restart,
         const size_t iterations){
-
 
     vec x_top = x.subvec(0, half-1).unsafe_col(0);
     vec x_bottom = x.subvec(half, x.n_rows-1).unsafe_col(0);
