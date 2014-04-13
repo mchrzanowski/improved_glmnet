@@ -4,14 +4,14 @@ CXX = g++
 RM = rm -f
 
 # flags
-CXXFLAGS = -std=c++0x -march=native -Wall -O4 -I/usr/include -I/usr/local/include \
+CXXFLAGS = -pg -std=c++0x -march=native -Wall -O4 -I/usr/include -I/usr/local/include \
 	-L/usr/local/lib -L/opt/intel/lib/intel64 -L/opt/intel/mkl/lib/intel64
 LDFLAGS = -larmadillo -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5
 
 # In this section, you list the files that are part of the project.
 # If you add/change names of header/source files, here is where you
 # edit the Makefile.
-SOURCES = cg.cc glm.cc
+SOURCES = cg.cc utils.cc glm.cc skinny_glm.cc fat_glm.cc
 HEADERS = $(SOURCES:.cc=.h)
 OBJECTS = $(SOURCES:.cc=.o)
 TARGETS = glmnet.out
