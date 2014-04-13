@@ -9,11 +9,13 @@ using namespace std;
 FatGLM::FatGLM(const mat &X_, const vec &y, const double lambda, const double eta) :
 X(X_), multiplier(lambda * (1 - eta)) {
 
+    cout << &X << "\t" << &X_ << endl;
+
     assert(eta > 0 && eta <= 1);
     assert(lambda > 0);
 
-    m = X_.n_rows;
-    n_half = X_.n_cols;
+    m = X.n_rows;
+    n_half = X.n_cols;
     n = 2*n_half;
 
     XT = X.t();
@@ -77,7 +79,8 @@ void FatGLM::solve(colvec &z, const size_t max_iterations){
         if (A.n_rows == 0) break;
 
         if (A.n_rows == A_prev.n_rows && accu(A == A_prev) == A.n_rows){
-            cg_solver.solve(x1_pre, x1_post, x2_pre, x2_post, x4_pre, x4_post, g_A, delz_A, divider, true, 3);
+            cg_solver.solve(x1_pre, x1_post, x2_pre, x2_post,
+                x4_pre, x4_post, g_A, delz_A, divider, true, 3);
         }
         /*else if (lol.n_rows == A.n_rows) {
 
@@ -98,11 +101,13 @@ void FatGLM::solve(colvec &z, const size_t max_iterations){
             cg_solver.solve(K_A, g_A, delz_A, false, 3);
         }*/
         else {
-            createMatrixChunks(x1_pre, x1_post, x2_pre, x2_post, x4_pre, x4_post, A, n_half, divider);
+            createMatrixChunks(x1_pre, x1_post, x2_pre,
+                x2_post, x4_pre, x4_post, A, n_half, divider);
             delz_A.zeros(A.n_rows);
             g_A = -g(A);
             
-            cg_solver.solve(x1_pre, x1_post, x2_pre, x2_post, x4_pre, x4_post, g_A, delz_A, divider, true, 3);
+            cg_solver.solve(x1_pre, x1_post, x2_pre, x2_post,
+                x4_pre, x4_post, g_A, delz_A, divider, true, 3);
             
             A_prev = A;
         }

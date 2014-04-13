@@ -9,9 +9,11 @@ GLM* GLM::makeGLM(const mat &X, const vec &y,
     const uword m = X.n_rows;
     const uword n = X.n_cols;
     if (n > 3 * m){
+        std::cout << "Created FatGLM class" << std::endl;
         return new FatGLM(X, y, lambda, eta);
     }
     else {
+        std::cout << "Created SkinnyGLM class" << std::endl;
         return new SkinnyGLM(X, y, lambda, eta);
     }
 }

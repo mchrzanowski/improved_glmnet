@@ -13,7 +13,7 @@ int main(int argc, char **argv){
     mat A; colvec b; colvec z;
 
     A.load("_A", csv_ascii);
-    b.load("_y", csv_ascii);
+    b.load("_b", csv_ascii);
     z.load("_z", csv_ascii);
 
     cout << A.n_rows << "x" << A.n_cols 
@@ -29,7 +29,6 @@ int main(int argc, char **argv){
 
     timer.tic();
     GLM *g = GLM::makeGLM(A, b, lambda, eta);
-    cout << "XX created" << endl;
     g->solve(z, iterations);
     
     double time = timer.toc();

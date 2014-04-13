@@ -16,9 +16,8 @@ multiplier(lambda * (1 - eta)) {
     assert(eta > 0 && eta <= 1);
     assert(lambda > 0);
     
-    const mat XXT = X.t();
-    XX = XXT * X;
-    const colvec Xy = XXT * y;
+    XX = X.t() * X;
+    const colvec Xy = (y.t() * X).t();
     g_start.zeros(n);
     g_start.subvec(0, n_half-1) = -Xy + lambda * eta;
     g_start.subvec(n_half, n-1) = Xy + lambda * eta;
