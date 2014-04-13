@@ -59,7 +59,7 @@ void CG::solve(const mat &x1_pre,
 
 }
 
-void CG::solve(const mat &A, const vec &b, vec &x,
+/*void CG::solve(const mat &A, const vec &b, vec &x,
     const bool restart, const size_t iterations) {
 
     double alpha, beta, r_sq_sum;
@@ -83,7 +83,7 @@ void CG::solve(const mat &A, const vec &b, vec &x,
         p -= r;
         prev_r_sq_sum = r_sq_sum;
     }
-}
+}*/
 
 void CG::solve(const mat &x1, 
         const mat &x2,

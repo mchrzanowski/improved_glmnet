@@ -6,10 +6,8 @@
 using namespace arma;
 using namespace std;
 
-FatGLM::FatGLM(const mat &X_, const vec &y, const double lambda, const double eta) :
-X(X_), multiplier(lambda * (1 - eta)) {
-
-    cout << &X << "\t" << &X_ << endl;
+FatGLM::FatGLM(const mat &X_, const vec &y, const double lambda,
+    const double eta) : X(X_), multiplier(lambda * (1 - eta)) {
 
     assert(eta > 0 && eta <= 1);
     assert(lambda > 0);
@@ -25,7 +23,7 @@ X(X_), multiplier(lambda * (1 - eta)) {
     g_start.subvec(n_half, n-1) = Xy + lambda * eta;
 }
 
-void FatGLM::createMatrixChunks(mat &x1_pre, mat &x1_post, mat &x2_pre, 
+void FatGLM::createMatrixChunks(mat &x1_pre, mat &x1_post, mat &x2_pre,
     mat &x2_post, mat &x4_pre, mat &x4_post, const uvec &A,
     const size_t n_half, uword &divider){
     
