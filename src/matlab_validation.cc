@@ -1,7 +1,7 @@
-#include <iostream>
 #include <armadillo>
-#include "glm.h"
 #include <assert.h>
+#include <iostream>
+#include "glm.h"
 
 using namespace std;
 using namespace arma;
@@ -31,6 +31,7 @@ int main(int argc, char **argv){
     GLM *g = GLM::makeGLM(A, b, lambda, eta);
     g->solve(z, iterations);
     
+    delete g;
     double time = timer.toc();
     vec w = z.subvec(0, A.n_cols - 1) - z.subvec(A.n_cols, 2 * A.n_cols - 1);
 

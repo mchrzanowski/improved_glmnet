@@ -44,31 +44,24 @@ const size_t n_half, uword &divider){
 void SkinnyGLM::solve(colvec &z, const size_t max_iterations){
 
     CG cg_solver;
-
-    size_t i;
-
-    uvec A, A_prev, D, neg_w(n_half), pos_w(n_half),
-        neg_delz, nonpos_g(z.n_rows), pos_z(z.n_rows);
-
-    colvec delz(z.n_rows), delz_A, g(g_start.n_rows), g_A;
-
+    colvec delz_A, g_A;
     const colvec u = z.subvec(0, n_half-1).unsafe_col(0);
     const colvec l = z.subvec(n_half, n-1).unsafe_col(0);
     colvec w = u - l;
-
     mat x1, x2, x4;
+    size_t i;
+    uvec A, A_prev, D;
     uword divider = 0;
 
     for (i = 0; i < max_iterations; i++){
 
         const colvec g_half = XX * w;
-
-        g = g_start;
+        colvec g = g_start;
         g.subvec(0, n_half-1) += g_half + u * multiplier;
         g.subvec(n_half, n-1) += -g_half + l * multiplier;
 
-        nonpos_g = find(g <= 0);
-        pos_z = find(z > 0);
+        const uvec nonpos_g = find(g <= 0);
+        const uvec pos_z = find(z > 0);
         vunion(nonpos_g, pos_z, A);
 
         if (A.n_rows == 0) break;
@@ -95,24 +88,20 @@ void SkinnyGLM::solve(colvec &z, const size_t max_iterations){
             cg_solver.solve(K_A, g_A, delz_A, false, 3);
         }*/
         else {
-
             createMatrixChunks(x1, x2, x4, A, n_half, divider);
-            
             delz_A.zeros(A.n_rows);
             g_A = -g(A);
-            
             cg_solver.solve(x1, x2, x4, g_A, delz_A, divider, true, 3);
-            
             A_prev = A;
         }
         
         if (norm(g_A, 2) <= 1) break;
 
-        delz.zeros();
+        colvec delz = zeros<vec>(n);
         delz(A) = delz_A;
 
         // select step size...
-        neg_delz = A(find(delz_A < 0));
+        const uvec neg_delz = A(find(delz_A < 0));
         vintersection(neg_delz, pos_z, D);
         if (D.n_rows == 0) break;
 
@@ -125,8 +114,8 @@ void SkinnyGLM::solve(colvec &z, const size_t max_iterations){
 
         // force one of indices of z to be active....
         w = u - l; 
-        neg_w = find(w < 0);
-        pos_w = find(w > 0);
+        const uvec neg_w = find(w < 0);
+        const uvec pos_w = find(w > 0);
         z(neg_w).zeros();
         z(pos_w + n_half).zeros();
         z(neg_w + n_half) = -w(neg_w);

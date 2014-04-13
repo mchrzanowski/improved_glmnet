@@ -23,32 +23,31 @@ void CG::solve(const mat &x1,
             x2_post * (x2_pre * x_bottom) - b_top + x_top * multiplier;
         
         r_bottom = ((x_top.t() * x2_post) * x2_pre).t() + 
-            x2_pre.t() * (x2_pre * x_bottom) - b_bottom + x_bottom * multiplier;
+            x2_pre.t() * (x2_pre * x_bottom) - 
+            b_bottom + x_bottom * multiplier;
         
         p_top = -r_top;
         p_bottom = -r_bottom;
         prev_r_sq_sum = dot(r_top, r_top) + dot(r_bottom, r_bottom);
     }
 
-    double alpha, beta, r_sq_sum;
-    colvec Ap_top(half), Ap_bottom(half);
-
     for (size_t i = 0; i < iterations && prev_r_sq_sum > RESIDUAL_TOL; i++){
-        Ap_top = x1.t() * (x1 * p_top) + 
+        const colvec Ap_top = x1.t() * (x1 * p_top) + 
             x2_post * (x2_pre * p_bottom) + p_top * multiplier;
-        
-        Ap_bottom = ((p_top.t() * x2_post) * x2_pre).t() + 
+
+        const colvec Ap_bottom = ((p_top.t() * x2_post) * x2_pre).t() + 
             x2_pre.t() * (x2_pre * p_bottom) + p_bottom * multiplier;
 
-        alpha = prev_r_sq_sum / (dot(p_top, Ap_top) + dot(p_bottom, Ap_bottom));
+        double alpha = prev_r_sq_sum / 
+            (dot(p_top, Ap_top) + dot(p_bottom, Ap_bottom));
 
         x_top += alpha * p_top;
         x_bottom += alpha * p_bottom;
         r_top += alpha * Ap_top;
         r_bottom += alpha * Ap_bottom;
-        r_sq_sum = dot(r_top, r_top) + dot(r_bottom, r_bottom);
+        double r_sq_sum = dot(r_top, r_top) + dot(r_bottom, r_bottom);
 
-        beta = r_sq_sum / prev_r_sq_sum;
+        double beta = r_sq_sum / prev_r_sq_sum;
         p_top *= beta;
         p_bottom *= beta;
         p_top -= r_top;
@@ -114,19 +113,20 @@ void CG::solve(const mat &x1,
         Ap_top = x1 * p_top + x2 * p_bottom;
         Ap_bottom = (p_top.t() * x2).t() + x4 * p_bottom;
 
-        alpha = prev_r_sq_sum / (dot(p_top, Ap_top) + dot(p_bottom, Ap_bottom));
+        alpha = prev_r_sq_sum / 
+            (dot(p_top, Ap_top) + dot(p_bottom, Ap_bottom));
 
         x_top += alpha * p_top;
         x_bottom += alpha * p_bottom;
         r_top += alpha * Ap_top;
         r_bottom += alpha * Ap_bottom;
-		r_sq_sum = dot(r_top, r_top) + dot(r_bottom, r_bottom);
+        r_sq_sum = dot(r_top, r_top) + dot(r_bottom, r_bottom);
 
         beta = r_sq_sum / prev_r_sq_sum;
         p_top *= beta;
         p_bottom *= beta;
         p_top -= r_top;
         p_bottom -= r_bottom;
-		prev_r_sq_sum = r_sq_sum;
+        prev_r_sq_sum = r_sq_sum;
     }
 }

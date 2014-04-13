@@ -1,6 +1,9 @@
 #include <armadillo>
 #include "glm.h"
 
+/*
+ A class to deal with skinny (m > n) matrices
+*/
 class SkinnyGLM : public GLM {
 
 public:

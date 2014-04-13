@@ -4,7 +4,7 @@ CXX = g++
 RM = rm -f
 
 # flags
-CXXFLAGS = -pg -std=c++0x -march=native -Wall -O4 -I/usr/include -I/usr/local/include \
+CXXFLAGS = -std=c++0x -march=native -Wall -O4 -I/usr/include -I/usr/local/include \
 	-L/usr/local/lib -L/opt/intel/lib/intel64 -L/opt/intel/mkl/lib/intel64
 LDFLAGS = -larmadillo -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5
 

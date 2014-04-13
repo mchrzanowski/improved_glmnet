@@ -2,7 +2,7 @@
 #include "glm.h"
 
 /*
- A class to deal with fat (m > n) matrices
+ A class to deal with fat (m < n) matrices
 */
 class FatGLM : public GLM {
 

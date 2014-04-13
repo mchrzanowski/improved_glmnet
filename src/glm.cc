@@ -1,6 +1,6 @@
+#include "fat_glm.h"
 #include "glm.h"
 #include "skinny_glm.h"
-#include "fat_glm.h"
 
 using namespace arma;
 
@@ -16,4 +16,8 @@ GLM* GLM::makeGLM(const mat &X, const vec &y,
         std::cout << "Created SkinnyGLM class" << std::endl;
         return new SkinnyGLM(X, y, lambda, eta);
     }
+}
+
+GLM::~GLM(){
+    
 }
