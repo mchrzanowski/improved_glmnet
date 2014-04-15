@@ -18,5 +18,5 @@ private:
     arma::colvec g_start;
     arma::mat XX;
     const double multiplier;
-    arma::uword m, n, n_half;
+    const arma::uword m, n, n_half;
 };

@@ -21,5 +21,5 @@ private:
     const arma::mat &X;
     arma::mat XT;
     const double multiplier;
-    arma::uword m, n, n_half;
+    const arma::uword m, n, n_half;
 };

@@ -7,14 +7,11 @@ using namespace arma;
 using namespace std;
 
 FatGLM::FatGLM(const mat &X_, const vec &y, const double lambda,
-    const double eta) : X(X_), multiplier(lambda * (1 - eta)) {
+    const double eta) :X(X_), multiplier(lambda * (1 - eta)),
+    m(X.n_rows), n(2*X.n_cols), n_half(X.n_cols) {
 
     assert(eta > 0 && eta <= 1);
     assert(lambda > 0);
-
-    m = X.n_rows;
-    n_half = X.n_cols;
-    n = 2*n_half;
 
     XT = X.t();
     const colvec Xy = XT * y;
@@ -37,7 +34,7 @@ void FatGLM::createMatrixChunks(mat &x1, mat &x2_pre,
     x1 = X.cols(A_top);
     
     x2_pre = X.cols(A_bottom);
-    x2_post = -XT.rows(A_top);
+    x2_post = XT.rows(A_top);
 
 }
 
@@ -113,26 +110,12 @@ void FatGLM::solve(colvec &z, const size_t max_iterations){
         colvec delz = zeros<vec>(n);
         delz(A) = delz_A;
 
-        // select step size...
-        const uvec neg_delz = A(find(delz_A < 0));
-        vintersection(neg_delz, pos_z, D);
-        if (D.n_rows == 0) break;
-
-        const vec alphas = z(D) / delz(D);
-        double alpha = min(-max(alphas), 1.0);
-        assert(alpha > 0);
+        double alpha = selectStepSize(A, pos_z, z, delz, delz_A);
 
         z(A) += delz_A * alpha;
         z.transform([] (double val) { return max(val, 0.); });
 
-        // force one of indices of z to be active....
-        w = u - l; 
-        const uvec neg_w = find(w < 0);
-        const uvec pos_w = find(w > 0);
-        z(neg_w).zeros();
-        z(pos_w + n_half).zeros();
-        z(neg_w + n_half) = -w(neg_w);
-        z(pos_w) = w(pos_w);
+        sparsify(z, w, u, l, n_half);
     }
 
     cout << "Iterations required: " << i << endl;
