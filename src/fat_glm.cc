@@ -14,7 +14,7 @@ FatGLM::FatGLM(const mat &X_, const vec &y, const double lambda,
     assert(lambda > 0);
 
     XT = X.t();
-    const colvec Xy = XT * y;
+    const colvec Xy = (y.t() * X).t();
     g_start.zeros(n);
     g_start.subvec(0, n_half-1) = -Xy + lambda * eta;
     g_start.subvec(n_half, n-1) = Xy + lambda * eta;
@@ -52,7 +52,7 @@ void FatGLM::solve(colvec &z, const size_t max_iterations){
 
     for (i = 0; i < max_iterations; i++){
 
-        const colvec g_half = XT * (X * w);
+        const colvec g_half = ((X * w).t() * X).t();
         colvec g = g_start;
         g.subvec(0, n_half-1) += g_half + u * multiplier;
         g.subvec(n_half, n-1) += -g_half + l * multiplier;
