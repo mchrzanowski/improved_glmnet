@@ -19,10 +19,9 @@ multiplier(lambda * (1 - eta)), m(X.n_rows), n(2*X.n_cols), n_half(X.n_cols) {
     g_start.subvec(n_half, n-1) = Xy + lambda * eta;
 }
 
-void SkinnyGLM::createMatrixChunks(mat &x1, mat &x2, mat &x4, const uvec &A,
-const size_t n_half, uword &divider){
+uword SkinnyGLM::createMatrixChunks(mat &x1, mat &x2, mat &x4, const uvec &A){
     const uvec top = find(A < n_half);
-    divider = top(top.n_rows-1) + 1;
+    const uword divider = top(top.n_rows-1) + 1;
 
     const uvec A_top = static_cast<uvec>(A(top));
     const uvec A_bottom = static_cast<uvec>(A.subvec(divider,
@@ -35,6 +34,8 @@ const size_t n_half, uword &divider){
     
     x4 = XX(A_bottom, A_bottom);
     x4.diag() += multiplier;
+
+    return divider;
 }
 
 void SkinnyGLM::solve(colvec &z, const size_t max_iterations){
@@ -63,7 +64,8 @@ void SkinnyGLM::solve(colvec &z, const size_t max_iterations){
         if (A.n_rows == 0) break;
 
         if (A.n_rows == A_prev.n_rows && accu(A == A_prev) == A.n_rows){
-            cg_solver.solve(x1, x2, x4, g_A, delz_A, divider, true, 3);
+            cg_solver.skinnyMatrixSolve(x1, x2, x4, g_A,
+                delz_A, divider, true, 3);
         }
         /*else if (lol.n_rows == A.n_rows) {
 
@@ -84,24 +86,17 @@ void SkinnyGLM::solve(colvec &z, const size_t max_iterations){
             cg_solver.solve(K_A, g_A, delz_A, false, 3);
         }*/
         else {
-            createMatrixChunks(x1, x2, x4, A, n_half, divider);
+            divider = createMatrixChunks(x1, x2, x4, A);
             delz_A.zeros(A.n_rows);
             g_A = -g(A);
-            cg_solver.solve(x1, x2, x4, g_A, delz_A, divider, true, 3);
+            cg_solver.skinnyMatrixSolve(x1, x2, x4, g_A,
+                delz_A, divider, true, 3);
             A_prev = A;
         }
         
         if (norm(g_A, 2) <= 1) break;
 
-        colvec delz = zeros<vec>(n);
-        delz(A) = delz_A;
-
-        double alpha = selectStepSize(A, pos_z, z, delz, delz_A);
-
-        z(A) += delz_A * alpha;
-        z.transform([] (double val) { return max(val, 0.); });
-
-        sparsify(z, w, u, l, n_half);
+        update(z, A, delz_A, w, u, l, n_half);
     }
 
     cout << "Iterations required: " << i << endl;

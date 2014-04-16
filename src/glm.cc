@@ -6,6 +6,10 @@
 
 using namespace arma;
 
+double GLM::clamp(double val){
+    return std::max(val, 0.);
+}
+
 GLM* GLM::makeGLM(const mat &X, const vec &y,
         const double lambda, const double eta){
     if (X.n_cols >= 3 * X.n_rows){   // this seems to work best.
@@ -16,6 +20,14 @@ GLM* GLM::makeGLM(const mat &X, const vec &y,
         std::cout << "Created SkinnyGLM class" << std::endl;
         return new SkinnyGLM(X, y, lambda, eta);
     }
+}
+
+void GLM::update(colvec &z, const uvec A, const colvec delz_A,
+    colvec &w, const colvec &u, const colvec &l, const uword n_half){
+    const double alpha = selectStepSize(A, z, delz_A);
+    z(A) += delz_A * alpha;
+    z.transform(clamp);
+    sparsify(z, w, u, l, n_half);
 }
 
 void GLM::sparsify(colvec &z, colvec &w, const colvec &u,
@@ -30,20 +42,23 @@ void GLM::sparsify(colvec &z, colvec &w, const colvec &u,
     z(pos_w) = w(pos_w);
 }
 
-double GLM::selectStepSize(const uvec &A, const uvec &pos_z, const colvec &z,
-    const colvec &delz, const colvec &delz_A){
+double GLM::selectStepSize(const uvec &A,
+    colvec &z, const colvec &delz_A){
+
+    colvec z_A = z(A);
+    const uvec neg_gradient = find(delz_A < 0);
+    const uvec pos_z = find(z_A > 0);
+
     uvec D;
-    const uvec neg_delz = A(find(delz_A < 0));
-    vintersection(neg_delz, pos_z, D);
+    vintersection(neg_gradient, pos_z, D);
     assert(D.n_rows > 0);
 
-    const vec alphas = z(D) / delz(D);
+    const vec alphas = z_A(D) / delz_A(D);
     double alpha = std::min(-max(alphas), 1.0);
     assert(alpha > 0);
 
     return alpha;
 }
 
-GLM::~GLM(){
-    
+GLM::~GLM(){   
 }

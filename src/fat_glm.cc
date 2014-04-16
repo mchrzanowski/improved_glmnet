@@ -7,7 +7,7 @@ using namespace arma;
 using namespace std;
 
 FatGLM::FatGLM(const mat &X_, const vec &y, const double lambda,
-    const double eta) :X(X_), multiplier(lambda * (1 - eta)),
+    const double eta) : X(X_), multiplier(lambda * (1 - eta)),
     m(X.n_rows), n(2*X.n_cols), n_half(X.n_cols) {
 
     assert(eta > 0 && eta <= 1);
@@ -19,20 +19,20 @@ FatGLM::FatGLM(const mat &X_, const vec &y, const double lambda,
     g_start.subvec(n_half, n-1) = Xy + lambda * eta;
 }
 
-void FatGLM::createMatrixChunks(mat &x1, mat &x2_pre,
-    const uvec &A, const size_t n_half, uword &divider){
+uword FatGLM::createMatrixChunks(mat &x1, mat &x2,
+    const uvec &A){
     
     const uvec top = find(A < n_half);
-    divider = top(top.n_rows-1) + 1;
+    const uword divider = top(top.n_rows-1) + 1;
 
     const uvec A_top = static_cast<uvec>(A(top));
     const uvec A_bottom = static_cast<uvec>(A.subvec(divider,
         A.n_rows-1) - n_half);
 
     x1 = X.cols(A_top);
-    
-    x2_pre = X.cols(A_bottom);
+    x2 = X.cols(A_bottom);
 
+    return divider;
 }
 
 void FatGLM::solve(colvec &z, const size_t max_iterations){
@@ -42,7 +42,7 @@ void FatGLM::solve(colvec &z, const size_t max_iterations){
     const colvec u = z.subvec(0, n_half-1).unsafe_col(0);
     const colvec l = z.subvec(n_half, n-1).unsafe_col(0);
     colvec w = u - l;
-    mat x1, x2_pre;
+    mat x1, x2;
     size_t i;
     uvec A, A_prev, D;
     uword divider = 0;
@@ -60,15 +60,25 @@ void FatGLM::solve(colvec &z, const size_t max_iterations){
 
         if (A.n_rows == 0) break;
 
-        if (A.n_rows == A_prev.n_rows && accu(A == A_prev) == A.n_rows){
-            cg_solver.solve(x1, x2_pre, g_A,
-                delz_A, divider, multiplier, true, 3);
-        }
-        /*else if (intersect.n_rows == A.n_rows && ((double) intersect.n_rows / A_prev.n_rows) > .75) {
-            cout << "HERE" << endl;
+        /*uvec intersect;
+        vintersection(A_prev, A, intersect);
+
+        if (intersect.n_rows == A.n_rows) {
             uvec diff;
             vdifference(A_prev, intersect, diff);
 
+            cout << diff.n_rows << endl;
+        }*/
+
+        if (A.n_rows == A_prev.n_rows && accu(A == A_prev) == A.n_rows){
+            cg_solver.fatMatrixSolve(x1, x2, g_A,
+                delz_A, divider, multiplier, true, 3);
+        }
+        /*else if (intersect.n_rows == A.n_rows && ((double) intersect.n_rows / A_prev.n_rows) > .75) {
+            uvec diff;
+            vdifference(A_prev, intersect, diff);
+
+            cout << diff.n_rows << endl;
             int A_index = A_prev.n_rows - 1;
             for (int s = diff.n_rows - 1; s >= 0 && A_index >= 0; s--){
                 while (diff(s) != A_prev(A_index)) A_index--;
@@ -77,41 +87,32 @@ void FatGLM::solve(colvec &z, const size_t max_iterations){
                     x2_post.shed_row(s);
                 }
                 else {
-                    x2_pre.shed_col(s - divider);
+                    x2.shed_col(s - divider);
                 }
                 delz_A.shed_row(s);
                 g_A.shed_row(s);
             }
             cout << "DONE" << endl;
             printf("%ux%u\n", x1.n_rows, x1.n_cols);
-            printf("%ux%u\n", x2_pre.n_rows, x2_pre.n_cols);
+            printf("%ux%u\n", x2.n_rows, x2.n_cols);
             printf("%ux%u\n", x2_post.n_rows, x2_post.n_cols);
-            cg_solver.solve(x1, x2_pre, x2_post,
+            cg_solver.fatMatrixSolve(x1, x2, x2_post,
                 g_A, delz_A, divider, multiplier, true, 3);
             A_prev = A;
         }*/
         else {
-            createMatrixChunks(x1, x2_pre, A, n_half, divider);
+            divider = createMatrixChunks(x1, x2, A);
             delz_A.zeros(A.n_rows);
             g_A = -g(A);
-            
-            cg_solver.solve(x1, x2_pre, g_A,
+            cg_solver.fatMatrixSolve(x1, x2, g_A,
                 delz_A, divider, multiplier, true, 3);
-            
             A_prev = A;
         }
         
         if (norm(g_A, 2) <= 1) break;
 
-        colvec delz = zeros<vec>(n);
-        delz(A) = delz_A;
+        update(z, A, delz_A, w, u, l, n_half);
 
-        double alpha = selectStepSize(A, pos_z, z, delz, delz_A);
-
-        z(A) += delz_A * alpha;
-        z.transform([] (double val) { return max(val, 0.); });
-
-        sparsify(z, w, u, l, n_half);
     }
 
     cout << "Iterations required: " << i << endl;

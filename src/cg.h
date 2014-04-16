@@ -3,7 +3,7 @@
 class CG {
 
 public:
-    void solve(const arma::mat &x1, 
+    void skinnyMatrixSolve(const arma::mat &x1, 
         const arma::mat &x2,
         const arma::mat &x4,
         const arma::vec &b,
@@ -12,7 +12,7 @@ public:
         const bool restart,
         const size_t iterations=3);
 
-    void solve(const arma::mat &x1, 
+    void fatMatrixSolve(const arma::mat &x1, 
         const arma::mat &x2_pre,
         const arma::vec &b,
         arma::vec &x,

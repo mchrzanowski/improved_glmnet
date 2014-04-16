@@ -2,7 +2,7 @@
 
 using namespace arma;
 
-void CG::solve(const mat &x1, 
+void CG::fatMatrixSolve(const mat &x1, 
             const mat &x2,
             const vec &b,
             vec &x,
@@ -18,6 +18,7 @@ void CG::solve(const mat &x1,
     const vec b_bottom = b.subvec(half, x.n_rows-1).unsafe_col(0);
 
     if (restart) {
+        // vector transpose is dirt cheap, but
         // avoid transposing matrices at ALL COST: that's *really* expensive.
         // ((x1 * x_top)^T * x1)^T == (x1^T * x1) * x_top
         // ((x2 * -x_bottom)^T * x1)^T == -x1^T * x2 * x_bottom
@@ -96,7 +97,7 @@ void CG::solve(const mat &x1,
     }
 }*/
 
-void CG::solve(const mat &x1, 
+void CG::skinnyMatrixSolve(const mat &x1, 
         const mat &x2,
         const mat &x4,
         const vec &b,
