@@ -14,7 +14,6 @@ public:
 
     void solve(const arma::mat &x1, 
         const arma::mat &x2_pre,
-        const arma::mat &x2_post,
         const arma::vec &b,
         arma::vec &x,
         const arma::uword half, 

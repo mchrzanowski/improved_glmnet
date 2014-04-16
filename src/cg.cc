@@ -4,7 +4,6 @@ using namespace arma;
 
 void CG::solve(const mat &x1, 
             const mat &x2_pre,
-            const mat &x2_post,
             const vec &b,
             vec &x,
             const uword half, 
@@ -20,9 +19,9 @@ void CG::solve(const mat &x1,
 
     if (restart) {
         r_top = ((x1 * x_top).t() * x1).t() + 
-            x2_post * (x2_pre * -x_bottom) - b_top + x_top * multiplier;
+            ((x2_pre * -x_bottom).t() * x1).t() - b_top + x_top * multiplier;
         
-        r_bottom = ((-x_top.t() * x2_post) * x2_pre).t() + 
+        r_bottom = ((x1 * -x_top).t() * x2_pre).t() + 
             + ((x2_pre * x_bottom).t() * x2_pre).t()
             - b_bottom + x_bottom * multiplier;
         
@@ -33,9 +32,9 @@ void CG::solve(const mat &x1,
 
     for (size_t i = 0; i < iterations && prev_r_sq_sum > RESIDUAL_TOL; i++){
         const colvec Ap_top = ((x1 * p_top).t() * x1).t() + 
-            x2_post * (x2_pre * -p_bottom) + p_top * multiplier;
+            ((x2_pre * -p_bottom).t() * x1).t() + p_top * multiplier;
 
-        const colvec Ap_bottom = ((-p_top.t() * x2_post) * x2_pre).t() 
+        const colvec Ap_bottom = ((x1 * -p_top).t() * x2_pre).t() 
             + ((x2_pre * p_bottom).t() * x2_pre).t() + p_bottom * multiplier;
 
         double alpha = prev_r_sq_sum / 

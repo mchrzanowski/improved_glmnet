@@ -13,7 +13,6 @@ FatGLM::FatGLM(const mat &X_, const vec &y, const double lambda,
     assert(eta > 0 && eta <= 1);
     assert(lambda > 0);
 
-    XT = X.t();
     const colvec Xy = (y.t() * X).t();
     g_start.zeros(n);
     g_start.subvec(0, n_half-1) = -Xy + lambda * eta;
@@ -21,8 +20,7 @@ FatGLM::FatGLM(const mat &X_, const vec &y, const double lambda,
 }
 
 void FatGLM::createMatrixChunks(mat &x1, mat &x2_pre,
-    mat &x2_post, const uvec &A,
-    const size_t n_half, uword &divider){
+    const uvec &A, const size_t n_half, uword &divider){
     
     const uvec top = find(A < n_half);
     divider = top(top.n_rows-1) + 1;
@@ -34,7 +32,6 @@ void FatGLM::createMatrixChunks(mat &x1, mat &x2_pre,
     x1 = X.cols(A_top);
     
     x2_pre = X.cols(A_bottom);
-    x2_post = XT.rows(A_top);
 
 }
 
@@ -45,7 +42,7 @@ void FatGLM::solve(colvec &z, const size_t max_iterations){
     const colvec u = z.subvec(0, n_half-1).unsafe_col(0);
     const colvec l = z.subvec(n_half, n-1).unsafe_col(0);
     colvec w = u - l;
-    mat x1, x2_pre, x2_post;
+    mat x1, x2_pre;
     size_t i;
     uvec A, A_prev, D;
     uword divider = 0;
@@ -64,8 +61,8 @@ void FatGLM::solve(colvec &z, const size_t max_iterations){
         if (A.n_rows == 0) break;
 
         if (A.n_rows == A_prev.n_rows && accu(A == A_prev) == A.n_rows){
-            cg_solver.solve(x1, x2_pre, x2_post,
-                g_A, delz_A, divider, multiplier, true, 3);
+            cg_solver.solve(x1, x2_pre, g_A,
+                delz_A, divider, multiplier, true, 3);
         }
         /*else if (intersect.n_rows == A.n_rows && ((double) intersect.n_rows / A_prev.n_rows) > .75) {
             cout << "HERE" << endl;
@@ -94,13 +91,12 @@ void FatGLM::solve(colvec &z, const size_t max_iterations){
             A_prev = A;
         }*/
         else {
-            createMatrixChunks(x1, x2_pre,
-                x2_post, A, n_half, divider);
+            createMatrixChunks(x1, x2_pre, A, n_half, divider);
             delz_A.zeros(A.n_rows);
             g_A = -g(A);
             
-            cg_solver.solve(x1, x2_pre, x2_post,
-                g_A, delz_A, divider, multiplier, true, 3);
+            cg_solver.solve(x1, x2_pre, g_A,
+                delz_A, divider, multiplier, true, 3);
             
             A_prev = A;
         }

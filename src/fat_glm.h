@@ -13,13 +13,12 @@ public:
 
 private:
     void createMatrixChunks(arma::mat &x1,
-        arma::mat &x2_pre, arma::mat &x2_post,
+        arma::mat &x2_pre,
         const arma::uvec &A,
         const size_t n_half, arma::uword &divider);
 
     arma::colvec g_start;
     const arma::mat &X;
-    arma::mat XT;
     const double multiplier;
     const arma::uword m, n, n_half;
 };
