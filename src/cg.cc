@@ -3,7 +3,7 @@
 using namespace arma;
 
 void CG::solve(const mat &x1, 
-            const mat &x2_pre,
+            const mat &x2,
             const vec &b,
             vec &x,
             const uword half, 
@@ -18,11 +18,17 @@ void CG::solve(const mat &x1,
     const vec b_bottom = b.subvec(half, x.n_rows-1).unsafe_col(0);
 
     if (restart) {
-        r_top = ((x1 * x_top).t() * x1).t() + 
-            ((x2_pre * -x_bottom).t() * x1).t() - b_top + x_top * multiplier;
-        
-        r_bottom = ((x1 * -x_top).t() * x2_pre).t() + 
-            + ((x2_pre * x_bottom).t() * x2_pre).t()
+        // avoid transposing matrices at ALL COST: that's *really* expensive.
+        // ((x1 * x_top)^T * x1)^T == (x1^T * x1) * x_top
+        // ((x2 * -x_bottom)^T * x1)^T == -x1^T * x2 * x_bottom
+
+        const rowvec x1_x_top = (x1 * x_top).t();
+        const rowvec x2_x_bottom = (x2 * x_bottom).t();
+
+        r_top = (x1_x_top * x1).t() + (-x2_x_bottom * x1).t()
+            - b_top + x_top * multiplier;
+
+        r_bottom = (-x1_x_top * x2).t() + (x2_x_bottom * x2).t()
             - b_bottom + x_bottom * multiplier;
         
         p_top = -r_top;
@@ -31,11 +37,15 @@ void CG::solve(const mat &x1,
     }
 
     for (size_t i = 0; i < iterations && prev_r_sq_sum > RESIDUAL_TOL; i++){
-        const colvec Ap_top = ((x1 * p_top).t() * x1).t() + 
-            ((x2_pre * -p_bottom).t() * x1).t() + p_top * multiplier;
 
-        const colvec Ap_bottom = ((x1 * -p_top).t() * x2_pre).t() 
-            + ((x2_pre * p_bottom).t() * x2_pre).t() + p_bottom * multiplier;
+        const rowvec x1_p_top = (x1 * p_top).t();
+        const rowvec x2_p_bottom = (x2 * p_bottom).t();
+
+        const colvec Ap_top = (x1_p_top * x1).t() + (-x2_p_bottom * x1).t()
+            + p_top * multiplier;
+
+        const colvec Ap_bottom = (-x1_p_top * x2).t() + (x2_p_bottom * x2).t()
+            + p_bottom * multiplier;
 
         double alpha = prev_r_sq_sum / 
             (dot(p_top, Ap_top) + dot(p_bottom, Ap_bottom));
