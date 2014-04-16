@@ -25,10 +25,10 @@ void CG::solve(const mat &x1,
         const rowvec x1_x_top = (x1 * x_top).t();
         const rowvec x2_x_bottom = (x2 * x_bottom).t();
 
-        r_top = (x1_x_top * x1).t() + (-x2_x_bottom * x1).t()
+        r_top = (x1_x_top * x1 - x2_x_bottom * x1).t()
             - b_top + x_top * multiplier;
 
-        r_bottom = (-x1_x_top * x2).t() + (x2_x_bottom * x2).t()
+        r_bottom = (-x1_x_top * x2 + x2_x_bottom * x2).t()
             - b_bottom + x_bottom * multiplier;
         
         p_top = -r_top;
@@ -41,26 +41,30 @@ void CG::solve(const mat &x1,
         const rowvec x1_p_top = (x1 * p_top).t();
         const rowvec x2_p_bottom = (x2 * p_bottom).t();
 
-        const colvec Ap_top = (x1_p_top * x1).t() + (-x2_p_bottom * x1).t()
+        const colvec Ap_top = (x1_p_top * x1 - x2_p_bottom * x1).t()
             + p_top * multiplier;
 
-        const colvec Ap_bottom = (-x1_p_top * x2).t() + (x2_p_bottom * x2).t()
+        const colvec Ap_bottom = (-x1_p_top * x2 + x2_p_bottom * x2).t()
             + p_bottom * multiplier;
 
-        double alpha = prev_r_sq_sum / 
+        const double alpha = prev_r_sq_sum / 
             (dot(p_top, Ap_top) + dot(p_bottom, Ap_bottom));
 
         x_top += alpha * p_top;
         x_bottom += alpha * p_bottom;
+        
         r_top += alpha * Ap_top;
         r_bottom += alpha * Ap_bottom;
-        double r_sq_sum = dot(r_top, r_top) + dot(r_bottom, r_bottom);
+        
+        const double r_sq_sum = dot(r_top, r_top) + dot(r_bottom, r_bottom);
+        const double beta = r_sq_sum / prev_r_sq_sum;
 
-        double beta = r_sq_sum / prev_r_sq_sum;
         p_top *= beta;
-        p_bottom *= beta;
         p_top -= r_top;
+        
+        p_bottom *= beta;
         p_bottom -= r_bottom;
+        
         prev_r_sq_sum = r_sq_sum;
     }
 
@@ -115,27 +119,28 @@ void CG::solve(const mat &x1,
 		prev_r_sq_sum = dot(r_top, r_top) + dot(r_bottom, r_bottom);
 	}
 
-    double alpha, beta, r_sq_sum;
-    colvec Ap_top(half), Ap_bottom(half);
-
     for (size_t i = 0; i < iterations && prev_r_sq_sum > RESIDUAL_TOL; i++){
-        Ap_top = x1 * p_top + x2 * p_bottom;
-        Ap_bottom = (p_top.t() * x2).t() + x4 * p_bottom;
+        const colvec Ap_top = x1 * p_top + x2 * p_bottom;
+        const colvec Ap_bottom = (p_top.t() * x2).t() + x4 * p_bottom;
 
-        alpha = prev_r_sq_sum / 
+        const double alpha = prev_r_sq_sum / 
             (dot(p_top, Ap_top) + dot(p_bottom, Ap_bottom));
 
         x_top += alpha * p_top;
         x_bottom += alpha * p_bottom;
+        
         r_top += alpha * Ap_top;
         r_bottom += alpha * Ap_bottom;
-        r_sq_sum = dot(r_top, r_top) + dot(r_bottom, r_bottom);
 
-        beta = r_sq_sum / prev_r_sq_sum;
+        const double r_sq_sum = dot(r_top, r_top) + dot(r_bottom, r_bottom);
+        const double beta = r_sq_sum / prev_r_sq_sum;
+        
         p_top *= beta;
-        p_bottom *= beta;
         p_top -= r_top;
+
+        p_bottom *= beta;
         p_bottom -= r_bottom;
+
         prev_r_sq_sum = r_sq_sum;
     }
 }
