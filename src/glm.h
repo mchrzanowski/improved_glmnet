@@ -32,9 +32,9 @@ class GLM {
             const arma::colvec &u, const arma::colvec &l,
             const arma::uword n_half);
 
-        /*void updateBetter(arma::colvec &z, const arma::uvec &A,
+        bool updateBetter(arma::colvec &z, const arma::uvec &A,
             const arma::colvec &delz_A, arma::colvec &w,
             const arma::colvec &u, const arma::colvec &l,
             const arma::uword n_half, const arma::colvec &Kz, 
-            const arma::colvec &Ku, const arma::vec &eta);*/
+            const arma::colvec &Ku, const arma::vec &eta);
 };

@@ -15,7 +15,7 @@ TestGLM::TestGLM(const mat &X, const vec &y, const double lambda,
     // construct Hessian matrix once and for all.
     const mat XXT = X.t();
     XX = XXT * X;
-    mat XX_I = XX + speye(XX.n_rows, XX.n_cols) * lambda * (1 - eta);
+    const mat XX_I = XX + speye(XX.n_rows, XX.n_cols) * lambda * (1 - eta);
     K = join_vert(join_horiz(XX_I, -XX), join_horiz(-XX, XX_I));
 
     const colvec Xy = XXT * y;
@@ -63,7 +63,14 @@ void TestGLM::solve(colvec &z, const size_t max_iterations){
         }
 
         if (norm(g_A, 2) <= 1) break;
-        update(z, A, delz_A, w, u, l, n_half);
+
+        //update(z, A, delz_A, w, u, l, n_half);
+        const colvec Kz = K_A * z(A);
+        const colvec Ku = K_A * delz_A;
+        bool progressMade = updateBetter(z, A, delz_A, w, u, l, n_half, 
+                                            Kz, Ku, g_start(A));
+
+        if (! progressMade) break;
     }
 
     cout << "Iterations required: " << i << endl;

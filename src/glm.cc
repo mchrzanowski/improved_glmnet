@@ -36,14 +36,16 @@ void GLM::update(colvec &z, const uvec A, const colvec delz_A,
     sparsify(z, w, u, l, n_half);
 }
 
-/*void GLM::updateBetter(colvec &z, const uvec &A, const colvec &delz_A,
+bool GLM::updateBetter(colvec &z, const uvec &A, const colvec &delz_A,
     colvec &w, const colvec &u, const colvec &l, const uword n_half,
-    const colvec &Kz, const colvec &Ku, const double eta){
+    const colvec &Kz, const colvec &Ku, const vec &eta){
     const double alpha = selectImprovedStepSize(A, eta, z, delz_A, Kz, Ku);
+    if (alpha == 0) return false;
     z(A) += delz_A * alpha;
     z.transform(clamp);
     sparsify(z, w, u, l, n_half);
-}*/
+    return true;
+}
 
 void GLM::sparsify(colvec &z, colvec &w, const colvec &u,
     const colvec &l, const uword n_half){
@@ -66,49 +68,49 @@ double GLM::selectImprovedStepSize(const uvec &A, const vec &eta,
 
     uvec D;
     vintersection(neg_gradient, pos_z, D);
-    assert(D.n_rows > 0);
+    if (D.n_rows == 0) return 0;
 
     const vec alphas = -z_A(D) / delz_A(D);
     const uvec sorted_indices = sort_index(alphas);
 
-    double pi = 0, omega = 0, sigma = 0, c = 0,
-        minimizer = alphas(sorted_indices(0)),
-        past_approx = 0;
+    double pi = 0, omega = 0, sigma = 0, c = 0, past_approx = 0;
 
-    for (size_t i = 0; i < sorted_indices.n_rows; i++){
+    uword i;
+
+    for (i = 0; i < sorted_indices.n_rows; i++){
         uword indx = sorted_indices(i);
 
         double mu_i = delz_A(D(indx));
         double alpha_i = alphas(indx);
-        double Ku_i = Ku(A(D(indx)));
-        double Kz_i = Kz(A(D(indx)));
+        double Ku_i = Ku(D(indx));
+        double Kz_i = Kz(D(indx));
+        double eta_i = eta(D(indx));
+
+        if (alpha_i > 1) break;
 
         pi -= 2 * mu_i * Ku_i;
-        omega += -mu_i * (Kz_i + eta(A(D(indx))))
-            + alpha_i * mu_i * Ku_i;
+        omega += -mu_i * (Kz_i + eta_i) + alpha_i * mu_i * Ku_i;
         sigma += mu_i;
         c += alpha_i * mu_i;
 
-        const double p = pi + omega * omega;
-        const double q = omega - sigma * c;
+        double p = pi + sigma * sigma;
+        double q = omega - sigma * c;
 
-        double approx = alpha_i * p + q;
-
-        if (approx < 0){
-            minimizer = -p / q;
-            past_approx = approx;
+        if (i < sorted_indices.n_rows - 1){
+            double approx = alphas(sorted_indices(i + 1)) * p + q;
+            if (approx < 0) continue;
         }
-        else if (past_approx >= 0){
-            minimizer = alpha_i;
-            break;
+
+        double current = alpha_i * p + q;
+        if (current >= 0){
+            return std::min(1., alpha_i);
         }
         else {
-            break; // return current minimizer
+            return std::min(1., -p / q);
         }
     }
 
-    //std::cout << minimizer << std::endl;
-    return minimizer;
+    return 1;
 }
 
 double GLM::selectStepSize(const uvec &A,

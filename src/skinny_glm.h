@@ -1,4 +1,3 @@
-#include <armadillo>
 #include "glm.h"
 
 /*
