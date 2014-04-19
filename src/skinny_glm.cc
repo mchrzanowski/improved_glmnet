@@ -12,7 +12,7 @@ multiplier(lambda * (1 - eta)), m(X.n_rows), n(2*X.n_cols), n_half(X.n_cols) {
     assert(eta > 0 && eta <= 1);
     assert(lambda > 0);
     
-    XX = X.t() * X;
+    XX = symmatu(X.t() * X);
     const colvec Xy = (y.t() * X).t();
     g_start.zeros(n);
     g_start.subvec(0, n_half-1) = -Xy + lambda * eta;

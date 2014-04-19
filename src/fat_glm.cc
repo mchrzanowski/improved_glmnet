@@ -44,7 +44,7 @@ void FatGLM::solve(colvec &z, const size_t max_iterations){
     colvec w = u - l;
     mat x1, x2;
     size_t i;
-    uvec A, A_prev, D;
+    uvec A, A_prev;
     uword divider = 0;
 
     for (i = 0; i < max_iterations; i++){
@@ -53,7 +53,7 @@ void FatGLM::solve(colvec &z, const size_t max_iterations){
         colvec g = g_start;
         g.subvec(0, n_half-1) += g_half + u * multiplier;
         g.subvec(n_half, n-1) += -g_half + l * multiplier;
-
+        
         const uvec nonpos_g = find(g <= 0);
         const uvec pos_z = find(z > 0);
         vunion(nonpos_g, pos_z, A);

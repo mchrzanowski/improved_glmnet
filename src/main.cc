@@ -1,5 +1,6 @@
 #include <iostream>
 #include <armadillo>
+#include "cg.h"
 #include "glm.h"
 
 using namespace std;
@@ -9,16 +10,18 @@ void test(const mat &A, const vec &b, vec &z, const double lambda,
 const double eta, const size_t size, const size_t iterations){
     cout << "Iterations: " << iterations << endl;
 
-    GLM g(A, b, lambda, eta);
+    GLM *g = GLM::makeGLM(A, b, lambda, eta);
     cout << "K Created!" << endl;
 
-    g.solve(z, iterations);
+    g->solve(z, iterations);
     
     vec w = z.subvec(0, size - 1) - z.subvec(size, 2 * size - 1);
 
     double error = 0.5 * sum(square(b - A * w))
         + lambda * (eta * norm(w, 1) + 0.5 * (1 - eta) * sum(square(w)));
     cout << "Error: " << error << endl;
+
+    delete g;
 }
 
 void cg_test(){
