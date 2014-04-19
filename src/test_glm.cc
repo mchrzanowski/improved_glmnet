@@ -32,10 +32,9 @@ void TestGLM::solve(colvec &z, const size_t max_iterations){
 
     size_t i;
 
-    uvec A, A_prev, D, neg_w(n_half), pos_w(n_half),
-        neg_delz, nonpos_g(z.n_rows), pos_z(z.n_rows);
+    uvec A, A_prev;
 
-    colvec delz(z.n_rows), delz_A, g(g_start.n_rows), g_A;
+    colvec delz_A, g_A;
 
     colvec u = z.subvec(0, n_half-1).unsafe_col(0);
     colvec l = z.subvec(n_half, 2*n_half-1).unsafe_col(0);
@@ -45,8 +44,8 @@ void TestGLM::solve(colvec &z, const size_t max_iterations){
 
         const colvec g = g_start + K * z;
 
-        nonpos_g = find(g <= 0);
-        pos_z = find(z > 0);
+        const uvec nonpos_g = find(g <= 0);
+        const uvec pos_z = find(z > 0);
         vunion(nonpos_g, pos_z, A);
         const size_t A_size = A.n_rows;
 
