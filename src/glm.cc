@@ -75,20 +75,20 @@ double GLM::selectImprovedStepSize(const uvec &A, const vec &eta,
     if (D.n_rows == 0) return 0;
 
     const vec alphas = -z_A(D) / delz_A(D);
-    const uvec sorted_indices = sort_index(alphas(find(alphas <= 1)));
+    const uvec sorted_indices = sort_index(alphas);
 
     double pi = 0, omega = 0, sigma = 0, c = 0;
 
     for (uword i = 0; i < sorted_indices.n_rows; i++){
         uword indx = sorted_indices(i);
 
-        double mu_i = delz_A(D(indx));
         double alpha_i = alphas(indx);
+        if (alpha_i > 1) break;
+
+        double mu_i = delz_A(D(indx));
         double Ku_i = Ku(D(indx));
         double Kz_i = Kz(D(indx));
         double eta_i = eta(D(indx));
-
-        if (alpha_i > 1) break;
 
         pi -= 2 * mu_i * Ku_i;
         omega += -mu_i * (Kz_i + eta_i) + alpha_i * mu_i * Ku_i;
