@@ -8,13 +8,27 @@ class GLM {
             const double lambda, const double eta,
             bool unoptimizedSolver=false);
 
-        static double clamp(double val);
-        
         virtual void solve(arma::colvec &z, const size_t max_iterations) = 0;
         
         virtual ~GLM();
 
     protected:
+        void update(arma::colvec &z, const arma::uvec A,
+            const arma::colvec delz_A, arma::colvec &w,
+            const arma::colvec &u, const arma::colvec &l,
+            const arma::uword n_half);
+
+        bool updateBetter(arma::colvec &z, const arma::uvec &A,
+            const arma::colvec &delz_A, arma::colvec &w,
+            const arma::colvec &u, const arma::colvec &l,
+            const arma::uword n_half, const arma::colvec &Kz, 
+            const arma::colvec &Ku, const arma::vec &eta);
+
+    private:
+        static double clamp(double val);
+        
+        static double approx(double a, double p, double q);
+
         void sparsify(arma::colvec &z, arma::colvec &w, 
             const arma::colvec &u, const arma::colvec &l,
             const arma::uword n_half);
@@ -27,14 +41,5 @@ class GLM {
             const arma::colvec &delz_A, const arma::colvec &Kz,
             const arma::colvec &Ku);
 
-        void update(arma::colvec &z, const arma::uvec A,
-            const arma::colvec delz_A, arma::colvec &w,
-            const arma::colvec &u, const arma::colvec &l,
-            const arma::uword n_half);
 
-        bool updateBetter(arma::colvec &z, const arma::uvec &A,
-            const arma::colvec &delz_A, arma::colvec &w,
-            const arma::colvec &u, const arma::colvec &l,
-            const arma::uword n_half, const arma::colvec &Kz, 
-            const arma::colvec &Ku, const arma::vec &eta);
 };

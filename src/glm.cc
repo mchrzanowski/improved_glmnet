@@ -7,6 +7,10 @@
 
 using namespace arma;
 
+double GLM::approx(double a, double p, double q){
+    return p * a + q;
+}
+
 double GLM::clamp(double val){
     return std::max(val, 0.);
 }
@@ -71,13 +75,11 @@ double GLM::selectImprovedStepSize(const uvec &A, const vec &eta,
     if (D.n_rows == 0) return 0;
 
     const vec alphas = -z_A(D) / delz_A(D);
-    const uvec sorted_indices = sort_index(alphas);
+    const uvec sorted_indices = sort_index(alphas(find(alphas <= 1)));
 
-    double pi = 0, omega = 0, sigma = 0, c = 0, past_approx = 0;
+    double pi = 0, omega = 0, sigma = 0, c = 0;
 
-    uword i;
-
-    for (i = 0; i < sorted_indices.n_rows; i++){
+    for (uword i = 0; i < sorted_indices.n_rows; i++){
         uword indx = sorted_indices(i);
 
         double mu_i = delz_A(D(indx));
@@ -96,14 +98,13 @@ double GLM::selectImprovedStepSize(const uvec &A, const vec &eta,
         double p = pi + sigma * sigma;
         double q = omega - sigma * c;
 
-        if (i < sorted_indices.n_rows - 1){
-            double approx = alphas(sorted_indices(i + 1)) * p + q;
-            if (approx < 0) continue;
+        if (i < sorted_indices.n_rows - 1 &&
+            GLM::approx(alphas(sorted_indices(i + 1)), p, q) < 0){
+            continue;
         }
 
-        double current = alpha_i * p + q;
-        if (current >= 0){
-            return alpha_i;
+        if (GLM::approx(alpha_i, p, q) >= 0){
+            return alpha_i; // guaranteed to be <= 1.
         }
         else {
             return std::min(1., -p / q);
