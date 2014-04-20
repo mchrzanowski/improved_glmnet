@@ -103,9 +103,9 @@ double GLM::selectImprovedStepSize(const uvec &A, const vec &eta,
 
         double current = alpha_i * p + q;
         if (current >= 0){
-            return std::min(1., alpha_i);
+            return alpha_i;
         }
-        else if (i + 1 != sorted_indices.n_rows) {
+        else {
             return std::min(1., -p / q);
         }
     }
