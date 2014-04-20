@@ -25,10 +25,10 @@ class GLM {
             const arma::colvec &Ku, const arma::vec &eta);
 
     private:
+        static double approx(double alpha, double p, double q);
+        
         static double clamp(double val);
         
-        static double approx(double a, double p, double q);
-
         void sparsify(arma::colvec &z, arma::colvec &w, 
             const arma::colvec &u, const arma::colvec &l,
             const arma::uword n_half);
@@ -40,6 +40,4 @@ class GLM {
             const arma::vec &eta, arma::colvec &z,
             const arma::colvec &delz_A, const arma::colvec &Kz,
             const arma::colvec &Ku);
-
-
 };

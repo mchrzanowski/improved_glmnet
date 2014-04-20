@@ -7,8 +7,8 @@
 
 using namespace arma;
 
-double GLM::approx(double a, double p, double q){
-    return p * a + q;
+double GLM::approx(double alpha, double p, double q){
+    return p * alpha + q;
 }
 
 double GLM::clamp(double val){
@@ -22,7 +22,7 @@ GLM* GLM::makeGLM(const mat &X, const vec &y,
         std::cout << "Created TestGLM class" << std::endl;
         return new TestGLM(X, y, lambda, eta);
     }
-    else if (X.n_cols >= 3 * X.n_rows){   // this seems to work well in practice.
+    else if (X.n_cols >= 3 * X.n_rows){   // works well in practice.
         std::cout << "Created FatGLM class" << std::endl;
         return new FatGLM(X, y, lambda, eta);
     }
@@ -43,6 +43,7 @@ void GLM::update(colvec &z, const uvec A, const colvec delz_A,
 bool GLM::updateBetter(colvec &z, const uvec &A, const colvec &delz_A,
     colvec &w, const colvec &u, const colvec &l, const uword n_half,
     const colvec &Kz, const colvec &Ku, const vec &eta){
+    
     const double alpha = selectImprovedStepSize(A, eta, z, delz_A, Kz, Ku);
     if (alpha == 0) return false;
     z(A) += delz_A * alpha;
@@ -51,9 +52,9 @@ bool GLM::updateBetter(colvec &z, const uvec &A, const colvec &delz_A,
     return true;
 }
 
+/* Force one of i or n+i to be active. */
 void GLM::sparsify(colvec &z, colvec &w, const colvec &u,
     const colvec &l, const uword n_half){
-    // force one of indices of z to be active....
     w = u - l; 
     const uvec neg_w = find(w < 0);
     const uvec pos_w = find(w > 0);
