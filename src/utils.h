@@ -29,3 +29,12 @@ void vdifference(const ARMA_VECTOR_TYPE<T> &first,
                         back_inserter(output)) ;
     result = arma::conv_to<ARMA_VECTOR_TYPE<T>>::from(output);
 }
+
+void fatMultiply(const arma::mat &A1, const arma::mat &A2,
+    const arma::colvec &x1, const arma::colvec &x2,
+    const double multiplier, arma::colvec &y);
+
+void fatMultiply(const arma::mat &A1, const arma::mat &A2,
+    const arma::colvec &x1, const arma::colvec &x2,
+    const double multiplier, arma::colvec &y1,
+    arma::colvec &y2);

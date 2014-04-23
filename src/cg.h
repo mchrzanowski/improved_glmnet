@@ -16,7 +16,6 @@ public:
         const arma::mat &x2_pre,
         const arma::vec &b,
         arma::vec &x,
-        const arma::uword half, 
         const double multiplier,
         const bool restart,
         const size_t iterations=3);
@@ -24,6 +23,12 @@ public:
     void solve(const arma::mat &A,
         const arma::vec &b, arma::vec &x,
         const bool restart, const size_t iterations=3);
+
+    arma::vec& getP_top();
+    arma::vec& getP_bottom();
+
+    arma::vec& getR_top();
+    arma::vec& getR_bottom();
 
 private:
     const double RESIDUAL_TOL = 1e-3;

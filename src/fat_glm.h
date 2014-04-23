@@ -11,8 +11,8 @@ public:
     void solve(arma::colvec &z, const size_t max_iterations);
 
 private:
-    arma::uword createMatrixChunks(arma::mat &x1,
-        arma::mat &x2, const arma::uvec &A);
+    void createMatrixChunks(arma::mat &x1,
+        arma::mat &x2, const arma::uvec &A, const arma::uvec &A_prev);
 
     arma::colvec g_start;
     const arma::mat &X;

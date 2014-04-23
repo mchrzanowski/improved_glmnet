@@ -1,15 +1,33 @@
 #include "cg.h"
+#include "utils.h"
 
 using namespace arma;
+
+arma::vec& CG::getP_top(){
+    return p_top;
+}
+
+arma::vec& CG::getP_bottom(){
+    return p_bottom;
+}
+
+arma::vec& CG::getR_top(){
+    return r_top;
+}
+
+arma::vec& CG::getR_bottom(){
+    return r_bottom;
+}
 
 void CG::fatMatrixSolve(const mat &x1, 
             const mat &x2,
             const vec &b,
             vec &x,
-            const uword half, 
             const double multiplier,
             const bool restart,
             const size_t iterations){
+
+    const uword half = x1.n_cols;
 
     vec x_top = x.subvec(0, half-1).unsafe_col(0);
     vec x_bottom = x.subvec(half, x.n_rows-1).unsafe_col(0);
@@ -39,14 +57,8 @@ void CG::fatMatrixSolve(const mat &x1,
 
     for (size_t i = 0; i < iterations && prev_r_sq_sum > RESIDUAL_TOL; i++){
 
-        const rowvec x1_p_top = (x1 * p_top).t();
-        const rowvec x2_p_bottom = (x2 * p_bottom).t();
-
-        const colvec Ap_top = (x1_p_top * x1 - x2_p_bottom * x1).t()
-            + p_top * multiplier;
-
-        const colvec Ap_bottom = (-x1_p_top * x2 + x2_p_bottom * x2).t()
-            + p_bottom * multiplier;
+        colvec Ap_top, Ap_bottom;
+        fatMultiply(x1, x2, p_top, p_bottom, multiplier,  Ap_top, Ap_bottom);
 
         const double alpha = prev_r_sq_sum / 
             (dot(p_top, Ap_top) + dot(p_bottom, Ap_bottom));
