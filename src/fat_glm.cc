@@ -73,8 +73,7 @@ void FatGLM::solve(colvec &z, const size_t max_iterations){
             cg_solver.fatMatrixSolve(x1, x2, g_A,
                 delz_A, multiplier, true, 3);
         }
-        else if (intersect.n_rows == A.n_rows && accu(intersect == A) == A.n_rows 
-        && diff.n_rows < 10){
+        else if (intersect.n_rows == A.n_rows && diff.n_rows < 30){
 
             region++;
             uword divider = x1.n_cols;
@@ -83,16 +82,16 @@ void FatGLM::solve(colvec &z, const size_t max_iterations){
             while (d < A_prev.n_rows && A_prev(d) < A(a)){
                 if (d < divider){
                     x1.shed_col(0);
-                    cg_solver.getP_top().shed_row(0);
-                    cg_solver.getR_top().shed_row(0);
+                    //cg_solver.getP_top().shed_row(0);
+                    //cg_solver.getR_top().shed_row(0);
                 }
                 else {
                     x2.shed_col(0);
-                    cg_solver.getP_bottom().shed_row(0);
-                    cg_solver.getR_bottom().shed_row(0);
+                    //cg_solver.getP_bottom().shed_row(0);
+                    //cg_solver.getR_bottom().shed_row(0);
                 }
-                g_A.shed_row(0);
-                delz_A.shed_row(0);
+                //g_A.shed_row(0);
+                //delz_A.shed_row(0);
                 d++;
             }
 
@@ -100,18 +99,18 @@ void FatGLM::solve(colvec &z, const size_t max_iterations){
                 if (A_prev(d) != A(a)){
                     if (d < divider){
                         x1.shed_col(b);
-                        g_A.shed_row(b);
-                        delz_A.shed_row(b);
-                        cg_solver.getP_top().shed_row(b);
-                        cg_solver.getR_top().shed_row(b);
+                        //g_A.shed_row(b);
+                        //delz_A.shed_row(b);
+                        //cg_solver.getP_top().shed_row(b);
+                        //cg_solver.getR_top().shed_row(b);
                     }
                     else {
                         x2.shed_col(b);
-                        cg_solver.getP_bottom().shed_row(b);
-                        cg_solver.getR_bottom().shed_row(b);
+                        //cg_solver.getP_bottom().shed_row(b);
+                        //cg_solver.getR_bottom().shed_row(b);
 
-                        g_A.shed_row(divider+b);
-                        delz_A.shed_row(divider+b);
+                        //g_A.shed_row(divider+b);
+                        //delz_A.shed_row(divider+b);
                     }
                     
                     if (A_prev(d) < A(a)) {
@@ -134,26 +133,25 @@ void FatGLM::solve(colvec &z, const size_t max_iterations){
             while (d < A_prev.n_rows){
                 if (d < divider){
                     x1.shed_col(b);
-                    g_A.shed_row(b);
-                    delz_A.shed_row(b);
-                    cg_solver.getP_top().shed_row(b);
-                    cg_solver.getR_top().shed_row(b);
+                    //cg_solver.getP_top().shed_row(b);
+                    //cg_solver.getR_top().shed_row(b);
+                    //g_A.shed_row(b);
+                    //delz_A.shed_row(b);
                 }
                 else {
                     x2.shed_col(b);
-                    cg_solver.getP_bottom().shed_row(b);
-                    cg_solver.getR_bottom().shed_row(b);
-
-                    g_A.shed_row(divider+b);
-                    delz_A.shed_row(divider+b);
+                    //cg_solver.getP_bottom().shed_row(b);
+                    //cg_solver.getR_bottom().shed_row(b);
+                    //g_A.shed_row(divider+b);
+                    //delz_A.shed_row(divider+b);
                 }
                 d++;
                 if (d == divider) b = 0;
             }
-            //delz_A.zeros(A.n_rows);
-            //g_A = -g(A);
+            delz_A.zeros(A.n_rows);
+            g_A = -g(A);
             cg_solver.fatMatrixSolve(x1, x2, g_A,
-                delz_A, multiplier, false, 3);
+                delz_A, multiplier, true, 3);
             A_prev = A;
         }
         else {
