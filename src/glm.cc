@@ -7,7 +7,7 @@
 
 using namespace arma;
 
-double GLM::approx(double alpha, double p, double q){
+double GLM::approximation(double alpha, double p, double q){
     return p * alpha + q;
 }
 
@@ -100,11 +100,11 @@ double GLM::selectImprovedStepSize(const uvec &A, const vec &eta,
         double q = omega - sigma * c;
 
         if (i < sorted_indices.n_rows - 1 &&
-            GLM::approx(alphas(sorted_indices(i + 1)), p, q) < 0){
+            GLM::approximation(alphas(sorted_indices(i + 1)), p, q) < 0){
             continue;
         }
 
-        if (GLM::approx(alpha_i, p, q) >= 0){
+        if (GLM::approximation(alpha_i, p, q) >= 0){
             return alpha_i; // guaranteed to be <= 1.
         }
         else {

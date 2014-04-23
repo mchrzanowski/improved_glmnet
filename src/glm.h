@@ -25,7 +25,7 @@ class GLM {
             const arma::colvec &Ku, const arma::vec &eta);
 
     private:
-        static double approx(double alpha, double p, double q);
+        static double approximation(double alpha, double p, double q);
         
         static double clamp(double val);
         

@@ -67,7 +67,7 @@ void FatGLM::solve(colvec &z, const size_t max_iterations){
             uvec diff;
             vdifference(A_prev, intersect, diff);
 
-            cout << diff.n_rows << endl;
+            // cout << diff.n_rows << endl;
         }*/
 
         if (A.n_rows == A_prev.n_rows && accu(A == A_prev) == A.n_rows){
@@ -78,7 +78,7 @@ void FatGLM::solve(colvec &z, const size_t max_iterations){
             uvec diff;
             vdifference(A_prev, intersect, diff);
 
-            cout << diff.n_rows << endl;
+            // cout << diff.n_rows << endl;
             int A_index = A_prev.n_rows - 1;
             for (int s = diff.n_rows - 1; s >= 0 && A_index >= 0; s--){
                 while (diff(s) != A_prev(A_index)) A_index--;
@@ -92,7 +92,7 @@ void FatGLM::solve(colvec &z, const size_t max_iterations){
                 delz_A.shed_row(s);
                 g_A.shed_row(s);
             }
-            cout << "DONE" << endl;
+            // cout << "DONE" << endl;
             printf("%ux%u\n", x1.n_rows, x1.n_cols);
             printf("%ux%u\n", x2.n_rows, x2.n_cols);
             printf("%ux%u\n", x2_post.n_rows, x2_post.n_cols);
@@ -111,9 +111,42 @@ void FatGLM::solve(colvec &z, const size_t max_iterations){
         
         if (norm(g_A, 2) <= 1) break;
 
-        update(z, A, delz_A, w, u, l, n_half);
+//        update(z, A, delz_A, w, u, l, n_half);
+
+        const colvec z_A = z(A);
+        const colvec z_A_top = z_A.subvec(0, divider-1).unsafe_col(0);
+        const colvec z_A_bottom = z_A.subvec(divider, z_A.n_rows-1).unsafe_col(0);
+
+        const rowvec x1_x_top = (x1 * z_A_top).t();
+        const rowvec x2_x_bottom = (x2 * z_A_bottom).t();
+
+        colvec Kz(A.n_rows);
+
+        Kz.subvec(0, divider-1) = (x1_x_top * x1 - x2_x_bottom * x1).t()
+            + z_A_top * multiplier;
+
+        Kz.subvec(divider, A.n_rows-1) = (-x1_x_top * x2 + x2_x_bottom * x2).t()
+            + z_A_bottom * multiplier;
+
+        const colvec delz_A_top = delz_A.subvec(0, divider-1).unsafe_col(0);
+        const colvec delz_A_bottom = delz_A.subvec(divider, delz_A.n_rows-1).unsafe_col(0);
+
+        const rowvec da_x_top = (x1 * delz_A_top).t();
+        const rowvec da_x_bottom = (x2 * delz_A_bottom).t();
+
+        colvec Ku(A.n_rows);
+
+        Ku.subvec(0, divider-1) = (da_x_top * x1 - da_x_bottom * x1).t()
+            + delz_A_top * multiplier;
+
+        Ku.subvec(divider, A.n_rows-1) = (-da_x_top * x2 + da_x_bottom * x2).t()
+            + delz_A_bottom * multiplier;
+
+        bool progress_made = updateBetter(z, A, delz_A, w, u, l, n_half, 
+                                            Kz, Ku, g_start(A));
+        if (! progress_made) break;
 
     }
 
-    cout << "Iterations required: " << i << endl;
+    // cout << "Iterations required: " << i << endl;
 }
