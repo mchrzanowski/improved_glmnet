@@ -10,7 +10,7 @@ FatGLM::FatGLM(const mat &X_, const vec &y, const double lambda,
     const double eta) : X(X_), multiplier(lambda * (1 - eta)),
     m(X.n_rows), n(2*X.n_cols), n_half(X.n_cols) {
 
-    assert(eta > 0 && eta <= 1);
+    assert(eta >= 0 && eta <= 1);
     assert(lambda > 0);
 
     const colvec Xy = (y.t() * X).t();
@@ -21,22 +21,17 @@ FatGLM::FatGLM(const mat &X_, const vec &y, const double lambda,
 
 void FatGLM::createMatrixChunks(mat &x1, mat &x2,
     const uvec &A, const uvec &A_prev){
-
-    uword divider = 0, A_prev_divider = 0;
     
-    while (A(divider) < n_half){
-        divider++;
-    }
+    uword divider = binarySearch(A, n_half);
     
     const uvec A_top = A.subvec(0, divider-1);
     const uvec A_bottom = A.subvec(divider, A.n_rows-1) - n_half;
 
     if (A_prev.n_rows > 0){
-        while (A_prev(A_prev_divider) < n_half){
-            A_prev_divider++;
-        }
+        uword A_prev_divider = binarySearch(A_prev, n_half);
         const uvec A_prev_top = A_prev.subvec(0, A_prev_divider-1);
-        const uvec A_prev_bottom = A_prev.subvec(A_prev_divider, A_prev.n_rows-1) - n_half;
+        const uvec A_prev_bottom = A_prev.subvec(A_prev_divider, 
+            A_prev.n_rows-1) - n_half;
 
         if (A_top.n_rows != A_prev_top.n_rows 
         || accu(A_top == A_prev_top) != A_top.n_rows) {
@@ -52,23 +47,18 @@ void FatGLM::createMatrixChunks(mat &x1, mat &x2,
         x1 = X.cols(A_top);
         x2 = X.cols(A_bottom);
     }
-    
 }
 
 void FatGLM::solve(colvec &z, const size_t max_iterations){
 
     CG cg_solver;
     colvec delz_A, g_A;
-    const colvec u = z.subvec(0, n_half-1).unsafe_col(0);
-    const colvec l = z.subvec(n_half, n-1).unsafe_col(0);
+    colvec u = z.subvec(0, n_half-1).unsafe_col(0);
+    colvec l = z.subvec(n_half, n-1).unsafe_col(0);
     colvec w = u - l;
     mat x1, x2;
     size_t i;
     uvec A, A_prev;
-
-    colvec u_prev, l_prev;
-
-    unsigned region = 0;
 
     for (i = 0; i < max_iterations; i++){
 
@@ -95,8 +85,7 @@ void FatGLM::solve(colvec &z, const size_t max_iterations){
                 delz_A, multiplier, true, 5);
             A_prev = A;
         }
-        
-        if (norm(g_A, 2) <= 1) break;
+        if (norm(g_A, 2) <= .5) break;
         const uword divider = x1.n_cols;
 
         const colvec z_A_top = u(A.subvec(0, divider - 1));
@@ -111,12 +100,10 @@ void FatGLM::solve(colvec &z, const size_t max_iterations){
         colvec Ku(A.n_rows);
         fatMultiply(x1, x2, delz_A_top, delz_A_bottom, multiplier, Ku);
 
-        bool progress_made = updateBetter(z, A, delz_A, w, u, l, n_half, 
-                                            Kz, Ku, g_start(A));
+        bool progress_made = updateBetter(z, A, delz_A, Kz, Ku, g_start(A));
         if (! progress_made) break;
-
+        projectAndSparsify(w, u, l);
     }
     cout << "Iterations required: " << i << endl;
-    cout << "Times in special region: " << region << endl;
 
 }

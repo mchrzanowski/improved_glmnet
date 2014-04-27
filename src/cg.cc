@@ -40,7 +40,6 @@ void CG::fatMatrixSolve(const mat &x1,
         // avoid transposing matrices at ALL COST: that's *really* expensive.
         // ((x1 * x_top)^T * x1)^T == (x1^T * x1) * x_top
         // ((x2 * -x_bottom)^T * x1)^T == -x1^T * x2 * x_bottom
-
         const rowvec x1_x_top = (x1 * x_top).t();
         const rowvec x2_x_bottom = (x2 * x_bottom).t();
 
@@ -49,16 +48,15 @@ void CG::fatMatrixSolve(const mat &x1,
 
         r_bottom = (-x1_x_top * x2 + x2_x_bottom * x2).t()
             - b_bottom + x_bottom * multiplier;
-        
+
         p_top = -r_top;
         p_bottom = -r_bottom;
         prev_r_sq_sum = dot(r_top, r_top) + dot(r_bottom, r_bottom);
     }
-
+    
     for (size_t i = 0; i < iterations && prev_r_sq_sum > RESIDUAL_TOL; i++){
-
-        colvec Ap_top, Ap_bottom;
-        fatMultiply(x1, x2, p_top, p_bottom, multiplier,  Ap_top, Ap_bottom);
+        colvec Ap_top(p_top.n_rows), Ap_bottom(p_bottom.n_rows);
+        fatMultiply(x1, x2, p_top, p_bottom, multiplier, Ap_top, Ap_bottom);
 
         const double alpha = prev_r_sq_sum / 
             (dot(p_top, Ap_top) + dot(p_bottom, Ap_bottom));
@@ -80,7 +78,6 @@ void CG::fatMatrixSolve(const mat &x1,
         
         prev_r_sq_sum = r_sq_sum;
     }
-
 }
 
 void CG::solve(const mat &A, const vec &b, vec &x,

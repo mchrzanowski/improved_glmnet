@@ -42,8 +42,8 @@ void SkinnyGLM::solve(colvec &z, const size_t max_iterations){
 
     CG cg_solver;
     colvec delz_A, g_A;
-    const colvec u = z.subvec(0, n_half-1).unsafe_col(0);
-    const colvec l = z.subvec(n_half, n-1).unsafe_col(0);
+    colvec u = z.subvec(0, n_half-1).unsafe_col(0);
+    colvec l = z.subvec(n_half, n-1).unsafe_col(0);
     colvec w = u - l;
     mat x1, x2, x4;
     size_t i;
@@ -96,7 +96,8 @@ void SkinnyGLM::solve(colvec &z, const size_t max_iterations){
         
         if (norm(g_A, 2) <= 1) break;
 
-        update(z, A, delz_A, w, u, l, n_half);
+        update(z, A, delz_A);
+        projectAndSparsify(w, u, l);
     }
 
     cout << "Iterations required: " << i << endl;

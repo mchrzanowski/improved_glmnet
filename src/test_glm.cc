@@ -64,12 +64,11 @@ void TestGLM::solve(colvec &z, const size_t max_iterations){
 
         if (norm(g_A, 2) <= 1) break;
 
-        //update(z, A, delz_A, w, u, l, n_half);
         const colvec Kz = K_A * z(A);
         const colvec Ku = K_A * delz_A;
-        bool progress_made = updateBetter(z, A, delz_A, w, u, l, n_half, 
-                                            Kz, Ku, g_start(A));
+        bool progress_made = updateBetter(z, A, delz_A, Kz, Ku, g_start(A));
         if (! progress_made) break;
+        projectAndSparsify(w, u, l);
     }
 
     cout << "Iterations required: " << i << endl;

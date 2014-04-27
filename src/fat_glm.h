@@ -8,6 +8,7 @@ class FatGLM : public GLM {
 public:
     FatGLM(const arma::mat &X, const arma::vec &y, const double lambda,
         const double eta);
+    
     void solve(arma::colvec &z, const size_t max_iterations);
 
 private:
