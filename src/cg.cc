@@ -20,12 +20,12 @@ arma::vec& CG::getR_bottom(){
 }
 
 void CG::fatMatrixSolve(const mat &x1, 
-            const mat &x2,
-            const vec &b,
-            vec &x,
-            const double multiplier,
-            const bool restart,
-            const size_t iterations){
+    const mat &x2,
+    const vec &b,
+    vec &x,
+    const double multiplier,
+    const bool restart,
+    const size_t iterations){
 
     const uword half = x1.n_cols;
 
@@ -109,13 +109,13 @@ void CG::solve(const mat &A, const vec &b, vec &x,
 }
 
 void CG::skinnyMatrixSolve(const mat &x1, 
-        const mat &x2,
-        const mat &x4,
-        const vec &b,
-        vec &x,
-        const uword half, 
-        const bool restart,
-        const size_t iterations){
+    const mat &x2,
+    const mat &x4,
+    const vec &b,
+    vec &x,
+    const uword half, 
+    const bool restart,
+    const size_t iterations){
 
     vec x_top = x.subvec(0, half-1).unsafe_col(0);
     vec x_bottom = x.subvec(half, x.n_rows-1).unsafe_col(0);

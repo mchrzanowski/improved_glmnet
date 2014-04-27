@@ -22,15 +22,36 @@ FatGLM::FatGLM(const mat &X_, const vec &y, const double lambda,
 void FatGLM::createMatrixChunks(mat &x1, mat &x2,
     const uvec &A, const uvec &A_prev){
 
-    uword divider = 0;
+    uword divider = 0, A_prev_divider = 0;
+    
     while (A(divider) < n_half){
         divider++;
     }
+    
     const uvec A_top = A.subvec(0, divider-1);
     const uvec A_bottom = A.subvec(divider, A.n_rows-1) - n_half;
 
-    x1 = X.cols(A_top);
-    x2 = X.cols(A_bottom);
+    if (A_prev.n_rows > 0){
+        while (A_prev(A_prev_divider) < n_half){
+            A_prev_divider++;
+        }
+        const uvec A_prev_top = A_prev.subvec(0, A_prev_divider-1);
+        const uvec A_prev_bottom = A_prev.subvec(A_prev_divider, A_prev.n_rows-1) - n_half;
+
+        if (A_top.n_rows != A_prev_top.n_rows 
+        || accu(A_top == A_prev_top) != A_top.n_rows) {
+            x1 = X.cols(A_top);
+        }
+
+        if (A_bottom.n_rows != A_prev_bottom.n_rows 
+        || accu(A_bottom == A_prev_bottom) != A_bottom.n_rows) {
+            x2 = X.cols(A_bottom);
+        }
+    }
+    else {
+        x1 = X.cols(A_top);
+        x2 = X.cols(A_bottom);
+    }
     
 }
 
@@ -47,7 +68,7 @@ void FatGLM::solve(colvec &z, const size_t max_iterations){
 
     colvec u_prev, l_prev;
 
-    int region = 0;
+    unsigned region = 0;
 
     for (i = 0; i < max_iterations; i++){
 
@@ -62,118 +83,29 @@ void FatGLM::solve(colvec &z, const size_t max_iterations){
 
         if (A.n_rows == 0) break;
 
-        uvec intersect, diff;
-        vintersection(A_prev, A, intersect);
-
-        if (intersect.n_rows == A.n_rows) {
-            vdifference(A_prev, intersect, diff);
-        }
-
         if (A.n_rows == A_prev.n_rows && accu(A == A_prev) == A.n_rows){
             cg_solver.fatMatrixSolve(x1, x2, g_A,
-                delz_A, multiplier, true, 3);
-        }
-        else if (intersect.n_rows == A.n_rows && diff.n_rows < 30){
-
-            region++;
-            uword divider = x1.n_cols;
-
-            uword d = 0, a = 0, b = 0;
-            while (d < A_prev.n_rows && A_prev(d) < A(a)){
-                if (d < divider){
-                    x1.shed_col(0);
-                    //cg_solver.getP_top().shed_row(0);
-                    //cg_solver.getR_top().shed_row(0);
-                }
-                else {
-                    x2.shed_col(0);
-                    //cg_solver.getP_bottom().shed_row(0);
-                    //cg_solver.getR_bottom().shed_row(0);
-                }
-                //g_A.shed_row(0);
-                //delz_A.shed_row(0);
-                d++;
-            }
-
-            while (d < A_prev.n_rows && a < A.n_rows){
-                if (A_prev(d) != A(a)){
-                    if (d < divider){
-                        x1.shed_col(b);
-                        //g_A.shed_row(b);
-                        //delz_A.shed_row(b);
-                        //cg_solver.getP_top().shed_row(b);
-                        //cg_solver.getR_top().shed_row(b);
-                    }
-                    else {
-                        x2.shed_col(b);
-                        //cg_solver.getP_bottom().shed_row(b);
-                        //cg_solver.getR_bottom().shed_row(b);
-
-                        //g_A.shed_row(divider+b);
-                        //delz_A.shed_row(divider+b);
-                    }
-                    
-                    if (A_prev(d) < A(a)) {
-                        d++;
-                    }
-                    else {
-                        a++;
-                        b++;
-                    }
-                }
-                else {
-                    d++;
-                    a++;
-                    b++;
-                }
-
-                if (d == divider) b = 0;
-            }
-
-            while (d < A_prev.n_rows){
-                if (d < divider){
-                    x1.shed_col(b);
-                    //cg_solver.getP_top().shed_row(b);
-                    //cg_solver.getR_top().shed_row(b);
-                    //g_A.shed_row(b);
-                    //delz_A.shed_row(b);
-                }
-                else {
-                    x2.shed_col(b);
-                    //cg_solver.getP_bottom().shed_row(b);
-                    //cg_solver.getR_bottom().shed_row(b);
-                    //g_A.shed_row(divider+b);
-                    //delz_A.shed_row(divider+b);
-                }
-                d++;
-                if (d == divider) b = 0;
-            }
-            delz_A.zeros(A.n_rows);
-            g_A = -g(A);
-            cg_solver.fatMatrixSolve(x1, x2, g_A,
-                delz_A, multiplier, true, 3);
-            A_prev = A;
+                delz_A, multiplier, true, 5);
         }
         else {
             createMatrixChunks(x1, x2, A, A_prev);
             delz_A.zeros(A.n_rows);
             g_A = -g(A);
             cg_solver.fatMatrixSolve(x1, x2, g_A,
-                delz_A, multiplier, true, 3);
+                delz_A, multiplier, true, 5);
             A_prev = A;
         }
         
         if (norm(g_A, 2) <= 1) break;
         const uword divider = x1.n_cols;
 
-        const colvec z_A = z(A);
-        const colvec z_A_top = z_A.subvec(0, divider-1).unsafe_col(0);
-        const colvec z_A_bottom = z_A.subvec(divider, z_A.n_rows-1).unsafe_col(0);
+        const colvec z_A_top = u(A.subvec(0, divider - 1));
+        const colvec z_A_bottom = l(A.subvec(divider, A.n_rows-1) - n_half);
 
         colvec Kz(A.n_rows);
         fatMultiply(x1, x2, z_A_top, z_A_bottom, multiplier, Kz);
 
-        const colvec delz_A_top = delz_A.subvec(0, divider-1).unsafe_col(0);
+        const colvec delz_A_top = delz_A.subvec(0, divider - 1).unsafe_col(0);
         const colvec delz_A_bottom = delz_A.subvec(divider, delz_A.n_rows-1).unsafe_col(0);
 
         colvec Ku(A.n_rows);
@@ -184,7 +116,7 @@ void FatGLM::solve(colvec &z, const size_t max_iterations){
         if (! progress_made) break;
 
     }
-
     cout << "Iterations required: " << i << endl;
-    cout << "Hits in crit region: " << region << endl;
+    cout << "Times in special region: " << region << endl;
+
 }
