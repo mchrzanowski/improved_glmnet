@@ -25,11 +25,11 @@ double GLM::crossValidate(const mat &X,
   uword last_tr_sample = split_ratio * X.n_rows;
 
   const mat X_train = X.rows(permute.subvec(0, last_tr_sample - 1));
-  const colvec y_train = y.rows(permute.subvec(0, last_tr_sample - 1));
+  const colvec y_train = y(permute.subvec(0, last_tr_sample - 1));
 
   const mat X_test = X.rows(permute.subvec(last_tr_sample, 
                                             permute.n_rows - 1));
-  const colvec y_test = y.rows(permute.subvec(last_tr_sample,
+  const colvec y_test = y(permute.subvec(last_tr_sample,
                                               permute.n_rows - 1));
 
   GLM *g = makeGLM(X_train, y_train, eta);
@@ -80,7 +80,7 @@ GLM* GLM::makeGLM(const mat &X, const vec &y, double eta,
   }
 }
 
-/* get a Bartisema step length */
+/* get a Bartisemas step length */
 void GLM::update(colvec &z, const uvec &A, const colvec &delz_A){
   const double alpha = selectStepSize(A, z, delz_A);
   z(A) += delz_A * alpha;
@@ -115,7 +115,8 @@ void GLM::sparsify(colvec &w, colvec &u, colvec &l){
 
 /* secret sauce that needs a fat, proper comment */
 double GLM::selectImprovedStepSize(const uvec &A, const vec &eta,
-  colvec &z, const colvec &delz_A, const colvec &Kz, const colvec &Ku){
+                                    colvec &z, const colvec &delz_A, 
+                                    const colvec &Kz, const colvec &Ku){
 
   // approximation of gradient at a knot.
   const auto approx = [](double alpha, double p,
