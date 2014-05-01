@@ -3,39 +3,54 @@
 
 class GLM {
 
-    public:
-        static GLM* makeGLM(const arma::mat &X,const arma::vec &y,
-            const double lambda, const double eta,
-            bool unoptimizedSolver=false);
+  public:
 
-        virtual void solve(arma::colvec &z, const size_t max_iterations) = 0;
-        
-        virtual ~GLM();
+     static double crossValidate(const arma::mat &X,
+                                  const arma::colvec &y,
+                                  arma::colvec &z,
+                                  const std::vector<double> &lambdas,
+                                  double eta,
+                                  double split_ratio,
+                                  size_t max_iterations);
 
-    protected:
-        void update(arma::colvec &z, const arma::uvec &A,
-            const arma::colvec &delz_A);
+      static GLM* makeGLM(const arma::mat &X,const arma::vec &y,
+                          double eta, bool unoptimizedSolver=false);
+     
+      virtual ~GLM();
 
-        bool updateBetter(arma::colvec &z, const arma::uvec &A,
-            const arma::colvec &delz_A,
-            const arma::colvec &Kz, 
-            const arma::colvec &Ku, const arma::vec &eta);
+      virtual void solve(arma::colvec &z, double lambda, 
+                          size_t max_iterations) = 0;
 
-        void projectAndSparsify(arma::colvec &w, arma::colvec &u,
-            arma::colvec &l);
+      static double evaluate(const arma::mat &X, const arma::colvec &y,
+                      const arma::colvec &z, double lambda, double eta);
 
-    private:
-        static double approximation(double alpha, double p, double q);
-        
-        static double clamp(double val);
-        
-        void sparsify(arma::colvec &w, arma::colvec &u, arma::colvec &l);
-        
-        double selectStepSize(const arma::uvec &A,
-            arma::colvec &z, const arma::colvec &delz_A);
+  protected:
+      void update(arma::colvec &z, const arma::uvec &A,
+                  const arma::colvec &delz_A);
 
-        double selectImprovedStepSize(const arma::uvec &A,
-            const arma::vec &eta, arma::colvec &z,
-            const arma::colvec &delz_A, const arma::colvec &Kz,
-            const arma::colvec &Ku);
+      bool updateBetter(arma::colvec &z, const arma::uvec &A,
+                        const arma::colvec &delz_A,
+                        const arma::colvec &Kz, 
+                        const arma::colvec &Ku, 
+                        const arma::vec &eta);
+
+      void projectAndSparsify(arma::colvec &w, arma::colvec &u,
+                              arma::colvec &l);
+
+  private:
+      static double approximation(double alpha, double p, double q);
+      
+      static double clamp(double val);
+      
+      void sparsify(arma::colvec &w, arma::colvec &u, arma::colvec &l);
+      
+      double selectStepSize(const arma::uvec &A, arma::colvec &z,
+                            const arma::colvec &delz_A);
+
+      double selectImprovedStepSize(const arma::uvec &A,
+                                    const arma::vec &eta,
+                                    arma::colvec &z,
+                                    const arma::colvec &delz_A,
+                                    const arma::colvec &Kz,
+                                    const arma::colvec &Ku);
 };

@@ -5,18 +5,18 @@
 */
 class FatGLM : public GLM {
 
-public:
-    FatGLM(const arma::mat &X, const arma::vec &y, const double lambda,
-        const double eta);
+  public:
+    FatGLM(const arma::mat &X, const arma::vec &y, const double eta);
     
-    void solve(arma::colvec &z, const size_t max_iterations);
+    void solve(arma::colvec &z, const double lambda, 
+                const size_t max_iterations);
 
-private:
-    void createMatrixChunks(arma::mat &x1,
-        arma::mat &x2, const arma::uvec &A, const arma::uvec &A_prev);
+  private:
+    void createMatrixChunks(arma::mat &x1, arma::mat &x2, const arma::uvec &A,
+                            const arma::uvec &A_prev);
 
     arma::colvec g_start;
     const arma::mat &X;
-    const double multiplier;
-    const arma::uword m, n, n_half;
+    const arma::uword n, n_half;
+    const double eta;
 };

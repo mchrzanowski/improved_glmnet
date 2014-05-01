@@ -6,70 +6,70 @@
 using namespace arma;
 using namespace std;
 
-TestGLM::TestGLM(const mat &X, const vec &y, const double lambda,
-    const double eta) : eta(eta), lambda(lambda) {
+TestGLM::TestGLM(const mat &X, const vec &y, double eta) : 
+                  n_half(X.n_cols), eta(eta) {
 
-    assert(eta > 0 && eta <= 1);
-    assert(lambda > 0);
+  assert(eta >= 0 && eta <= 1);
 
-    // construct Hessian matrix once and for all.
-    const mat XXT = X.t();
-    XX = XXT * X;
-    const mat XX_I = XX + speye(XX.n_rows, XX.n_cols) * lambda * (1 - eta);
-    K = join_vert(join_horiz(XX_I, -XX), join_horiz(-XX, XX_I));
+  const mat XXT = X.t();
+  XX = XXT * X;
 
-    const colvec Xy = XXT * y;
-    g_start = join_vert(-Xy, Xy) + lambda * eta;
+  const colvec Xy = XXT * y;
+  g_start = join_vert(-Xy, Xy);
 }
 
-void TestGLM::solve(colvec &z, const size_t max_iterations){
+void TestGLM::solve(colvec &z, double lambda, size_t max_iterations){
 
-    const size_t n_half = z.n_rows / 2;
+  assert(lambda > 0);
 
-    CG cg_solver;
+  CG cg_solver;
 
-    mat K_A;
+  mat K_A;
 
-    size_t i;
+  size_t i;
 
-    uvec A, A_prev;
+  uvec A, A_prev;
 
-    colvec delz_A, g_A;
+  colvec delz_A, g_A;
 
-    colvec u = z.subvec(0, n_half-1).unsafe_col(0);
-    colvec l = z.subvec(n_half, 2*n_half-1).unsafe_col(0);
-    colvec w = u - l;
+  const mat XX_I = XX + speye(XX.n_rows, XX.n_cols) * lambda * (1 - eta);
+  const mat K = join_vert(join_horiz(XX, -XX), join_horiz(-XX, XX));
+  const colvec g_init = g_start + lambda * eta;
 
-    for (i = 0; i < max_iterations; i++){
+  colvec u = z.subvec(0, n_half-1).unsafe_col(0);
+  colvec l = z.subvec(n_half, 2*n_half-1).unsafe_col(0);
+  colvec w = u - l;
 
-        const colvec g = g_start + K * z;
+  for (i = 0; i < max_iterations; i++){
 
-        const uvec nonpos_g = find(g <= 0);
-        const uvec pos_z = find(z > 0);
-        vunion(nonpos_g, pos_z, A);
-        const size_t A_size = A.n_rows;
+    const colvec g = g_init + K * z;
 
-        if (A_size == 0) break;
+    const uvec nonpos_g = find(g <= 0);
+    const uvec pos_z = find(z > 0);
+    vunion(nonpos_g, pos_z, A);
+    const size_t A_size = A.n_rows;
 
-        if (A.n_rows == A_prev.n_rows && accu(A == A_prev) == A_size){
-            cg_solver.solve(K_A, g_A, delz_A, false, 3);
-        }
-        else {
-            K_A = K(A, A);
-            delz_A.zeros(A_size);
-            g_A = -g(A);
-            cg_solver.solve(K_A, g_A, delz_A, true, 3);
-            A_prev = A;
-        }
+    if (A_size == 0) break;
 
-        if (norm(g_A, 2) <= 1) break;
-
-        const colvec Kz = K_A * z(A);
-        const colvec Ku = K_A * delz_A;
-        bool progress_made = updateBetter(z, A, delz_A, Kz, Ku, g_start(A));
-        if (! progress_made) break;
-        projectAndSparsify(w, u, l);
+    if (A.n_rows == A_prev.n_rows && accu(A == A_prev) == A_size){
+      cg_solver.solve(K_A, g_A, delz_A, false, 3);
+    }
+    else {
+      K_A = K(A, A);
+      delz_A.zeros(A_size);
+      g_A = -g(A);
+      cg_solver.solve(K_A, g_A, delz_A, true, 3);
+      A_prev = A;
     }
 
-    cout << "Iterations required: " << i << endl;
+    if (norm(g_A, 2) <= 1) break;
+
+    const colvec Kz = K_A * z(A);
+    const colvec Ku = K_A * delz_A;
+    bool progress_made = updateBetter(z, A, delz_A, Kz, Ku, g_init(A));
+    if (! progress_made) break;
+    projectAndSparsify(w, u, l);
+  }
+
+  cout << "Iterations required: " << i << endl;
 }

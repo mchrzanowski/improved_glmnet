@@ -6,99 +6,85 @@
 using namespace arma;
 using namespace std;
 
-SkinnyGLM::SkinnyGLM(const mat &X, const vec &y, const double lambda, const double eta) :
-multiplier(lambda * (1 - eta)), m(X.n_rows), n(2*X.n_cols), n_half(X.n_cols) {
+SkinnyGLM::SkinnyGLM(const mat &X, const vec &y, const double eta) :
+                      m(X.n_rows), n(2*X.n_cols), n_half(X.n_cols), eta(eta) {
 
-    assert(eta > 0 && eta <= 1);
-    assert(lambda > 0);
-    
-    XX = symmatu(X.t() * X);
-    const colvec Xy = (y.t() * X).t();
-    g_start.zeros(n);
-    g_start.subvec(0, n_half-1) = -Xy + lambda * eta;
-    g_start.subvec(n_half, n-1) = Xy + lambda * eta;
+  assert(eta >= 0 && eta <= 1);    
+  XX = symmatu(X.t() * X);
+  const colvec Xy = (y.t() * X).t();
+  g_start.zeros(n);
+  g_start.subvec(0, n_half-1) = -Xy;
+  g_start.subvec(n_half, n-1) = Xy;
 }
 
-uword SkinnyGLM::createMatrixChunks(mat &x1, mat &x2, mat &x4, const uvec &A){
-    const uvec top = find(A < n_half);
-    const uword divider = top(top.n_rows-1) + 1;
+uword SkinnyGLM::createMatrixChunks(mat &x1, mat &x2, mat &x4,
+                                  const uvec &A, double multiplier){
+  const uvec top = find(A < n_half);
+  const uword divider = top(top.n_rows-1) + 1;
 
-    const uvec A_top = static_cast<uvec>(A(top));
-    const uvec A_bottom = static_cast<uvec>(A.subvec(divider,
-        A.n_rows-1) - n_half);
+  const uvec A_top = static_cast<uvec>(A(top));
+  const uvec A_bottom = static_cast<uvec>(A.subvec(divider,
+                                                    A.n_rows-1) - n_half);
 
-    x1 = XX(A_top, A_top);
-    x1.diag() += multiplier;
-    
-    x2 = -XX(A_top, A_bottom);
-    
-    x4 = XX(A_bottom, A_bottom);
-    x4.diag() += multiplier;
+  x1 = XX(A_top, A_top);
+  x1.diag() += multiplier;
+  
+  x2 = -XX(A_top, A_bottom);
+  
+  x4 = XX(A_bottom, A_bottom);
+  x4.diag() += multiplier;
 
-    return divider;
+  return divider;
 }
 
-void SkinnyGLM::solve(colvec &z, const size_t max_iterations){
+void SkinnyGLM::solve(colvec &z, double lambda, size_t max_iterations){
 
-    CG cg_solver;
-    colvec delz_A, g_A;
-    colvec u = z.subvec(0, n_half-1).unsafe_col(0);
-    colvec l = z.subvec(n_half, n-1).unsafe_col(0);
-    colvec w = u - l;
-    mat x1, x2, x4;
-    size_t i;
-    uvec A, A_prev, D;
-    uword divider = 0;
+  assert(lambda > 0);
+  const double multiplier = lambda * eta;
 
-    for (i = 0; i < max_iterations; i++){
+  CG cg_solver;
+  colvec delz_A, g_A;
+  colvec u = z.subvec(0, n_half-1).unsafe_col(0);
+  colvec l = z.subvec(n_half, n-1).unsafe_col(0);
+  colvec w = u - l;
+  mat x1, x2, x4;
+  size_t i;
+  uvec A, A_prev;
+  uword divider = 0;
 
-        const colvec g_half = XX * w;
-        colvec g = g_start;
-        g.subvec(0, n_half-1) += g_half + u * multiplier;
-        g.subvec(n_half, n-1) += -g_half + l * multiplier;
+  const colvec g_init = g_start + multiplier;
 
-        const uvec nonpos_g = find(g <= 0);
-        const uvec pos_z = find(z > 0);
-        vunion(nonpos_g, pos_z, A);
+  for (i = 0; i < max_iterations; i++){
 
-        if (A.n_rows == 0) break;
+    const colvec g_half = XX * w;
+    colvec g = g_init;
+    g.subvec(0, n_half-1) += g_half + u * multiplier;
+    g.subvec(n_half, n-1) += -g_half + l * multiplier;
 
-        if (A.n_rows == A_prev.n_rows && accu(A == A_prev) == A.n_rows){
-            cg_solver.skinnyMatrixSolve(x1, x2, x4, g_A,
-                delz_A, divider, true, 3);
-        }
-        /*else if (lol.n_rows == A.n_rows) {
+    const uvec nonpos_g = find(g <= 0);
+    const uvec pos_z = find(z > 0);
+    vunion(nonpos_g, pos_z, A);
 
-            uvec diff;
-            vdifference(A_prev, lol, diff);
+    if (A.n_rows == 0) break;
 
-            int A_index = A_prev.n_rows - 1;
-            for (int s = diff.n_rows - 1; s >= 0 && A_index >= 0; s--){
-                while (diff(s) != A_prev(A_index)) A_index--;
-                K_A.shed_row(s);
-                K_A.shed_col(s);
-                delz_A.shed_row(s);
-                g_A.shed_row(s);
-                cg_solver.getP().shed_row(s);
-                cg_solver.getR().shed_row(s);
-            }
-
-            cg_solver.solve(K_A, g_A, delz_A, false, 3);
-        }*/
-        else {
-            divider = createMatrixChunks(x1, x2, x4, A);
-            delz_A.zeros(A.n_rows);
-            g_A = -g(A);
-            cg_solver.skinnyMatrixSolve(x1, x2, x4, g_A,
-                delz_A, divider, true, 3);
-            A_prev = A;
-        }
-        
-        if (norm(g_A, 2) <= 1) break;
-
-        update(z, A, delz_A);
-        projectAndSparsify(w, u, l);
+    if (A.n_rows == A_prev.n_rows && accu(A == A_prev) == A.n_rows){
+        cg_solver.skinnyMatrixSolve(x1, x2, x4, g_A,
+                                    delz_A, divider, true, 3);
     }
+    else {
+        divider = createMatrixChunks(x1, x2, x4, A, multiplier);
+        delz_A.zeros(A.n_rows);
+        g_A = -g(A);
+        cg_solver.skinnyMatrixSolve(x1, x2, x4, g_A,
+            delz_A, divider, true, 3);
+        A_prev = A;
+    }
+    
+    if (norm(g_A, 2) <= 1) break;
 
-    cout << "Iterations required: " << i << endl;
+    update(z, A, delz_A);
+    projectAndSparsify(w, u, l);
+  }
+
+  cout << "Iterations required: " << i << endl;
 }
