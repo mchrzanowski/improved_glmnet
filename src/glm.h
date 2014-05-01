@@ -21,8 +21,11 @@ class GLM {
       virtual void solve(arma::colvec &z, double lambda, 
                           size_t max_iterations) = 0;
 
-      static double evaluate(const arma::mat &X, const arma::colvec &y,
-                      const arma::colvec &z, double lambda, double eta);
+      static double evaluate(const arma::mat &X,
+                              const arma::colvec &y,
+                              const arma::colvec &z,
+                              double lambda,
+                              double eta);
 
   protected:
       void update(arma::colvec &z, const arma::uvec &A,
@@ -37,9 +40,7 @@ class GLM {
       void projectAndSparsify(arma::colvec &w, arma::colvec &u,
                               arma::colvec &l);
 
-  private:
-      static double approximation(double alpha, double p, double q);
-      
+  private:      
       static double clamp(double val);
       
       void sparsify(arma::colvec &w, arma::colvec &u, arma::colvec &l);

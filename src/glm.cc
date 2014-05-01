@@ -35,28 +35,15 @@ double GLM::crossValidate(const mat &X,
   GLM *g = makeGLM(X_train, y_train, eta);
   double best_lambda = -1;
   double best_error = std::numeric_limits<double>::max();
-  wall_clock total;
-  total.tic();
   for (double lambda: lambdas){
-    wall_clock timer;
-    timer.tic();
     g->solve(z, lambda, max_iterations);
-    double time = timer.toc();
     double error = evaluate(X_test, y_test, z, lambda, eta);
-    std::cout << "Lambda: " << lambda << "\t" << "Error: " << error << 
-      "\t" << "Runtime: " << time << std::endl;
     if (error < best_error){
       best_lambda = lambda;
       best_error = error;
     }
   }
-  double total_time = total.toc();
-  std::cout << "Total Runtime: " << total_time << std::endl;
   return best_lambda;
-}
-
-double GLM::approximation(double alpha, double p, double q){
-  return p * alpha + q;
 }
 
 /* projcet to non-negative orphant */
@@ -64,7 +51,7 @@ double GLM::clamp(double val){
   return std::max(val, 0.);
 }
 
-/* evlaute the elastic net error value for a given
+/* evlaute the elastic net function value for a given
   problem instance */
 double GLM::evaluate(const mat &X, const colvec &y, const colvec &z,
                       double lambda, double eta){
@@ -76,23 +63,24 @@ double GLM::evaluate(const mat &X, const colvec &y, const colvec &z,
       + lambda * (eta * norm(w, 1) + 0.5 * (1 - eta) * sum(square(w)));
 }
 
+/* create a GLM solver instance.
+  pick one based on whether the input data matrix 
+  is skinny, fat, or whether we should use the basic solver */
 GLM* GLM::makeGLM(const mat &X, const vec &y, double eta,
                   bool unoptimizedSolver){
 
   if (unoptimizedSolver){
-    std::cout << "Created TestGLM class" << std::endl;
     return new TestGLM(X, y, eta);
   }
   else if (X.n_cols >= 3 * X.n_rows){   // works well in practice.
-    std::cout << "Created FatGLM class" << std::endl;
     return new FatGLM(X, y, eta);
   }
   else {
-    std::cout << "Created SkinnyGLM class" << std::endl;
     return new SkinnyGLM(X, y, eta);
   }
 }
 
+/* get a Bartisema step length */
 void GLM::update(colvec &z, const uvec &A, const colvec &delz_A){
   const double alpha = selectStepSize(A, z, delz_A);
   z(A) += delz_A * alpha;
@@ -125,11 +113,15 @@ void GLM::sparsify(colvec &w, colvec &u, colvec &l){
   l(neg_w) = -w(neg_w);
 }
 
+/* secret sauce that needs a fat, proper comment */
 double GLM::selectImprovedStepSize(const uvec &A, const vec &eta,
   colvec &z, const colvec &delz_A, const colvec &Kz, const colvec &Ku){
 
+  // approximation of gradient at a knot.
+  const auto approx = [](double alpha, double p,
+                          double q) { return p * alpha + q; };
   colvec z_A = z(A);
-  
+
   // find all indices for which, after a full step size,
   // we're nonpositive.
   uvec D = find(delz_A + z_A <= 0);
@@ -161,11 +153,11 @@ double GLM::selectImprovedStepSize(const uvec &A, const vec &eta,
     double q = omega - sigma * c;
 
     if (i < sorted_indices.n_rows - 1
-        && approximation(alphas[sorted_indices[i + 1]], p, q) < 0){
+        && approx(alphas[sorted_indices[i + 1]], p, q) < 0){
       continue;
     }
 
-    if (GLM::approximation(alpha_i, p, q) >= 0){
+    if (approx(alpha_i, p, q) >= 0){
       return alpha_i; // guaranteed to be <= 1.
     }
     else {
@@ -176,6 +168,7 @@ double GLM::selectImprovedStepSize(const uvec &A, const vec &eta,
   return 1;
 }
 
+/* Bertsekas[82] shows the first knot is always a safe step size */
 double GLM::selectStepSize(const uvec &A, colvec &z, const colvec &delz_A){
 
   colvec z_A = z(A);
