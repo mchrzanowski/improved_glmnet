@@ -7,24 +7,19 @@ using namespace arma;
 using namespace std;
 
 SkinnyGLM::SkinnyGLM(const mat &X, const vec &y, const double eta) :
-                      m(X.n_rows), n(2*X.n_cols), n_half(X.n_cols), eta(eta) {
-
+                      n(2*X.n_cols), n_half(X.n_cols), eta(eta) {
   assert(eta >= 0 && eta <= 1);    
   XX = symmatu(X.t() * X);
   const colvec Xy = (y.t() * X).t();
-  g_start.zeros(n);
-  g_start.subvec(0, n_half-1) = -Xy;
-  g_start.subvec(n_half, n-1) = Xy;
+  g_start = join_vert(-Xy, Xy);
 }
 
 uword SkinnyGLM::createMatrixChunks(mat &x1, mat &x2, mat &x4,
-                                  const uvec &A, double multiplier){
-  const uvec top = find(A < n_half);
-  const uword divider = top(top.n_rows-1) + 1;
-
-  const uvec A_top = static_cast<uvec>(A(top));
-  const uvec A_bottom = static_cast<uvec>(A.subvec(divider,
-                                                    A.n_rows-1) - n_half);
+                                    const uvec &A, double multiplier){
+  
+  const uword divider = binarySearch(A, n_half);
+  const uvec A_top = A.subvec(0, divider - 1);
+  const uvec A_bottom = A.subvec(divider, A.n_rows-1) - n_half;
 
   x1 = XX(A_top, A_top);
   x1.diag() += multiplier;
@@ -76,11 +71,11 @@ void SkinnyGLM::solve(colvec &z, double lambda, size_t max_iterations){
         delz_A.zeros(A.n_rows);
         g_A = -g(A);
         cg_solver.skinnyMatrixSolve(x1, x2, x4, g_A,
-            delz_A, divider, true, 3);
+                                    delz_A, divider, true, 3);
         A_prev = A;
     }
     
-    if (norm(g_A, 2) <= 1) break;
+    if (norm(g_A, 2) <= .5) break;
 
     update(z, A, delz_A);
     projectAndSparsify(w, u, l);

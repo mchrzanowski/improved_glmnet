@@ -67,15 +67,18 @@ double GLM::evaluate(const mat &X, const colvec &y, const colvec &z,
   pick one based on whether the input data matrix 
   is skinny, fat, or whether we should use the basic solver */
 GLM* GLM::makeGLM(const mat &X, const vec &y, double eta,
-                  bool unoptimizedSolver){
+                  bool unoptimized_solver){
 
-  if (unoptimizedSolver){
+  if (unoptimized_solver){
+    std::cout << "Using TestGLM solver." << std::endl;
     return new TestGLM(X, y, eta);
   }
   else if (X.n_cols >= 3 * X.n_rows){   // works well in practice.
+    std::cout << "Using FatGLM solver." << std::endl;
     return new FatGLM(X, y, eta);
   }
   else {
+    std::cout << "Using SkinnyGLM solver." << std::endl;
     return new SkinnyGLM(X, y, eta);
   }
 }
