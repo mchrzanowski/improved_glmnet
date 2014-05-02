@@ -8,6 +8,7 @@ class TestGLM : public GLM {
 
 public:
   TestGLM(const arma::mat &X, const arma::vec &y, const double eta);
+  
   void solve(arma::colvec &z, const double lambda, 
               const size_t max_iterations);
 

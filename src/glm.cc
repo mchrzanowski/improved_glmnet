@@ -59,8 +59,8 @@ double GLM::evaluate(const mat &X, const colvec &y, const colvec &z,
   const colvec w = z.subvec(0, X.n_cols - 1) - 
                     z.subvec(X.n_cols, 2 * X.n_cols - 1);
 
-  return 0.5 * sum(square(y - X * w))
-      + lambda * (eta * norm(w, 1) + 0.5 * (1 - eta) * sum(square(w)));
+  return .5 * sum(square(y - X * w))
+      + lambda * (eta * norm(w, 1) + .5 * (1 - eta) * sum(square(w)));
 }
 
 /* create a GLM solver instance.
@@ -130,7 +130,7 @@ double GLM::selectImprovedStepSize(const uvec &A, const vec &eta,
   // we're nonpositive.
   uvec D = find(delz_A + z_A <= 0);
 
-  if (D.n_rows == 0) return 0;
+  assert(D.n_rows > 0);
 
   const vec alphas = -z_A(D) / delz_A(D);
   const uvec sorted_indices = sort_index(alphas);

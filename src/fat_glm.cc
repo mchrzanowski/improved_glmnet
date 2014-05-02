@@ -103,9 +103,9 @@ void FatGLM::solve(colvec &z, double lambda, size_t max_iterations){
     // that as part of the gradient.
     const colvec K_z_A = -g_A - g_init_A;
 
-    const colvec delz_A_top = delz_A.subvec(0, divider - 1);
-    const colvec delz_A_bottom = delz_A.subvec(divider, delz_A.n_rows-1);
-
+    const colvec delz_A_top = delz_A.subvec(0, divider - 1).unsafe_col(0);
+    const colvec delz_A_bottom = delz_A.subvec(divider,
+                                                delz_A.n_rows-1).unsafe_col(0);
     colvec K_u_A(A.n_rows);
     fatMultiply(x1, x2, delz_A_top, delz_A_bottom, multiplier, K_u_A);
 

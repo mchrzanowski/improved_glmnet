@@ -8,19 +8,16 @@ using namespace arma;
 
 static void run(GLM *g, const mat &A, const colvec &b, colvec &z,
                 double lambda, double eta, size_t iters){
+  
   wall_clock timer;
   timer.tic();
   g->solve(z, lambda, iters);
   double time = timer.toc();
-  vec w = z.subvec(0, A.n_cols - 1) - z.subvec(A.n_cols, 2 * A.n_cols - 1);
-
-  double error = 0.5 * sum(square(b - A * w))
-      + lambda * (eta * norm(w, 1) + 0.5 * (1 - eta) * sum(square(w)));
+  double error = GLM::evaluate(A, b, z, lambda, eta);
 
   cout << "Lambda: " << lambda << endl;
   cout << "Error: " << error << endl;
   cout << "Runtime: " << time << " seconds. " << endl;
-
 }
 
 /*
@@ -77,6 +74,5 @@ int main(int argc, char **argv){
   run(g, A, b, z, lambda, eta, iterations);
   //run(g, A, b, z, lambda * 2, eta, iterations);
 
-  delete g;
-  
+  delete g; 
 }
