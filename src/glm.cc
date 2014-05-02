@@ -35,7 +35,7 @@ double GLM::crossValidate(const mat &X,
   GLM *g = makeGLM(X_train, y_train, eta);
   double best_lambda = -1;
   double best_error = std::numeric_limits<double>::max();
-  for (double lambda: lambdas){
+  for (const double &lambda: lambdas){
     g->solve(z, lambda, max_iterations);
     double error = evaluate(X_test, y_test, z, lambda, eta);
     if (error < best_error){
