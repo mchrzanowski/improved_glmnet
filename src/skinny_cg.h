@@ -7,7 +7,8 @@ class SkinnyCG {
 public:
   void solve(const mat &x1, 
               const mat &x2, const mat &x4,
-              const vec &b, vec &x,
+              const vec &b,
+              vec &x,
               bool restart,
               size_t iterations=3);
 

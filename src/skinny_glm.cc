@@ -1,5 +1,6 @@
 #include "skinny_glm.h"
 #include "skinny_cg.h"
+#include "skinny_utils.h"
 #include "utils.h"
 #include <assert.h>
 
@@ -72,7 +73,7 @@ void SkinnyGLM::solve(colvec &z, double lambda, size_t max_iterations){
   const double multiplier = lambda * eta;
 
   SkinnyCG cg_solver;
-  colvec delz_A, g_A;
+  colvec delz_A, g_A, g_start_with_multi_A;
   colvec u = z.subvec(0, n_half-1).unsafe_col(0);
   colvec l = z.subvec(n_half, n-1).unsafe_col(0);
   colvec w = u - l;
@@ -80,12 +81,12 @@ void SkinnyGLM::solve(colvec &z, double lambda, size_t max_iterations){
   size_t i;
   uvec A, A_prev;
 
-  const colvec g_init = g_start + multiplier;
+  const colvec g_start_with_multi = g_start + multiplier;
 
   for (i = 0; i < max_iterations; i++){
 
     const colvec g_half = XX * w;
-    colvec g = g_init;
+    colvec g = g_start_with_multi;
     g.subvec(0, n_half-1) += g_half + u * multiplier;
     g.subvec(n_half, n-1) += -g_half + l * multiplier;
 
@@ -99,13 +100,28 @@ void SkinnyGLM::solve(colvec &z, double lambda, size_t max_iterations){
       createMatrixChunks(x1, x2, x4, A, A_prev, multiplier);
       delz_A.zeros(A.n_rows);
       g_A = -g(A);
+      g_start_with_multi_A = g_start_with_multi(A);
       cg_solver.solve(x1, x2, x4, g_A, delz_A, true);
       A_prev = A;
     }
     
     if (norm(g_A, 2) <= G_A_TOL) break;
 
-    update(z, A, delz_A);
+    const uword divider = x1.n_cols;
+
+    // we need K * z. but we actually calculated
+    // that as part of the gradient.
+    const colvec K_z_A = -g_A - g_start_with_multi_A;
+
+    const colvec delz_A_top = delz_A.subvec(0, divider - 1).unsafe_col(0);
+    const colvec delz_A_bottom = delz_A.subvec(divider,
+                                                delz_A.n_rows-1).unsafe_col(0);
+    colvec K_u_A(A.n_rows);
+    skinnyMultiply(x1, x2, x4, delz_A_top, delz_A_bottom, K_u_A);
+
+    bool progress_made = updateBetter(z, A, delz_A, K_z_A, K_u_A,
+                                      g_start_with_multi_A);
+    if (! progress_made) break;
     projectAndSparsify(w, u, l);
   }
 

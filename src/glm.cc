@@ -44,23 +44,6 @@ double GLM::crossValidate(const mat &X,
   return best_lambda;
 }
 
-/* projcet to non-negative orphant */
-double GLM::clamp(double val){
-  return std::max(val, 0.);
-}
-
-/* evlaute the elastic net function value for a given
-  problem instance */
-double GLM::evaluate(const mat &X, const colvec &y, const colvec &z,
-                      double lambda, double eta){
-
-  const colvec w = z.subvec(0, X.n_cols - 1) - 
-                    z.subvec(X.n_cols, 2 * X.n_cols - 1);
-
-  return .5 * sum(square(y - X * w))
-      + lambda * (eta * norm(w, 1) + .5 * (1 - eta) * sum(square(w)));
-}
-
 /* create a GLM solver instance.
   pick one based on whether the input data matrix 
   is skinny, fat, or whether we should use the basic solver */
@@ -79,6 +62,23 @@ GLM* GLM::makeGLM(const mat &X, const vec &y, double eta,
     std::cout << "Using SkinnyGLM solver." << std::endl;
     return new SkinnyGLM(X, y, eta);
   }
+}
+
+/* project to non-negative orphant */
+double GLM::clamp(double val){
+  return std::max(val, 0.);
+}
+
+/* evlaute the elastic net function value for a given
+  problem instance */
+double GLM::evaluate(const mat &X, const colvec &y, const colvec &z,
+                      double lambda, double eta){
+
+  const colvec w = z.subvec(0, X.n_cols - 1) - 
+                    z.subvec(X.n_cols, 2 * X.n_cols - 1);
+
+  return .5 * sum(square(y - X * w))
+      + lambda * (eta * norm(w, 1) + .5 * (1 - eta) * sum(square(w)));
 }
 
 /* get a Bartisemas step length */
