@@ -18,18 +18,11 @@ void FatCG::solve(const mat &x1,
   const vec b_bottom = b.subvec(half, x.n_rows-1).unsafe_col(0);
 
   if (restart) {
-    // vector transpose is dirt cheap, but
-    // avoid transposing matrices at ALL COST: that's *really* expensive.
-    // ((x1 * x_top)^T * x1)^T == (x1^T * x1) * x_top
-    // ((x2 * -x_bottom)^T * x1)^T == -x1^T * x2 * x_bottom
-    const rowvec x1_x_top = (x1 * x_top).t();
-    const rowvec x2_x_bottom = (x2 * x_bottom).t();
 
-    r_top = (x1_x_top * x1 - x2_x_bottom * x1).t()
-        - b_top + x_top * multiplier;
-
-    r_bottom = (-x1_x_top * x2 + x2_x_bottom * x2).t()
-        - b_bottom + x_bottom * multiplier;
+    fatMultiply(x1, x2, x_top, x_bottom, multiplier, r_top, r_bottom);
+    
+    r_top -= b_top;
+    r_bottom -= b_bottom;
 
     p_top = -r_top;
     p_bottom = -r_bottom;

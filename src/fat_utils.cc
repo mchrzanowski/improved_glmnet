@@ -17,10 +17,14 @@ void fatMultiply(const mat &A1, const mat &A2, const colvec &x1,
 void fatMultiply(const mat &A1, const mat &A2, const colvec &x1,
                   const colvec &x2, double multiplier, colvec &y1, colvec &y2){
 
+  // vector transpose is dirt cheap, but
+  // avoid transposing matrices at ALL COST: that's *really* expensive.
+  // ((x1 * x_top)^T * x1)^T == (x1^T * x1) * x_top
+  // ((x2 * -x_bottom)^T * x1)^T == -x1^T * x2 * x_bottom
   const rowvec x1_x_top = (A1 * x1).t();
   const rowvec x2_x_bottom = (A2 * x2).t();
 
   y1 = (x1_x_top * A1 - x2_x_bottom * A1).t() + x1 * multiplier;
   y2 = (-x1_x_top * A2 + x2_x_bottom * A2).t() + x2 * multiplier;
-
+  
 }
