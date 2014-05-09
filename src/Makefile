@@ -12,7 +12,7 @@ LDFLAGS = -larmadillo -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5
 # If you add/change names of header/source files, here is where you
 # edit the Makefile.
 SOURCES = cg.cc utils.cc glm.cc skinny_glm.cc fat_glm.cc test_glm.cc \
-	fat_utils.cc fat_cg.cc skinny_cg.cc
+	fat_utils.cc fat_cg.cc skinny_cg.cc skinny_utils.cc
 HEADERS = $(SOURCES:.cc=.h)
 OBJECTS = $(SOURCES:.cc=.o)
 TARGETS = glmnet.out
