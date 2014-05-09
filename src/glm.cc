@@ -21,16 +21,14 @@ double GLM::crossValidate(const mat &X,
                           double split_ratio,
                           size_t max_iterations){
   // permute data.
-  uvec permute = shuffle(linspace<uvec>(0, X.n_rows - 1, X.n_rows));
+  uvec permute = shuffle(linspace<uvec>(0, X.n_rows-1, X.n_rows));
   uword last_tr_sample = split_ratio * X.n_rows;
 
-  const mat X_train = X.rows(permute.subvec(0, last_tr_sample - 1));
-  const colvec y_train = y(permute.subvec(0, last_tr_sample - 1));
+  const mat X_train = X.rows(permute.subvec(0, last_tr_sample-1));
+  const colvec y_train = y(permute.subvec(0, last_tr_sample-1));
 
-  const mat X_test = X.rows(permute.subvec(last_tr_sample, 
-                                            permute.n_rows - 1));
-  const colvec y_test = y(permute.subvec(last_tr_sample,
-                                              permute.n_rows - 1));
+  const mat X_test = X.rows(permute.subvec(last_tr_sample, permute.n_rows-1));
+  const colvec y_test = y(permute.subvec(last_tr_sample, permute.n_rows-1));
 
   GLM *g = makeGLM(X_train, y_train, eta);
   double best_lambda = -1;
@@ -97,7 +95,7 @@ bool GLM::updateBetter(colvec &z, const uvec &A, const colvec &delz_A,
   return true;
 }
 
-/* project vector elmements to non-negative orphant.
+/* project vector to non-negative orphant.
 then figure out whether i or n_half + i can be nonzero. */
 void GLM::projectAndSparsify(colvec &w, colvec &u, colvec &l){
   u.transform(clamp);
@@ -188,6 +186,16 @@ double GLM::selectStepSize(const uvec &A, colvec &z, const colvec &delz_A){
   assert(alpha > 0);
 
   return alpha;
+}
+
+/* find the active set, given the gradient g and the elements of z.
+this means look for all elements which have a nonpositive gradient
+or are strictly positive. this basically means that these are the
+indices that we can work on in this iteration. */
+void GLM::findActiveSet(const colvec &g, const colvec &z, uvec &A){
+  const uvec nonpos_g = find(g <= 0);
+  const uvec pos_z = find(z > 0);
+  vunion(nonpos_g, pos_z, A);
 }
 
 GLM::~GLM(){   

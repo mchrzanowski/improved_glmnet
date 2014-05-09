@@ -44,9 +44,7 @@ void TestGLM::solve(colvec &z, double lambda, size_t max_iterations){
 
     const colvec g = g_init + K * z;
 
-    const uvec nonpos_g = find(g <= 0);
-    const uvec pos_z = find(z > 0);
-    vunion(nonpos_g, pos_z, A);
+    findActiveSet(g, z, A);
     const size_t A_size = A.n_rows;
 
     if (A_size == 0) break;

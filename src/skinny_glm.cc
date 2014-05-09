@@ -1,9 +1,8 @@
 #include "skinny_glm.h"
-#include "cg.h"
+#include "skinny_cg.h"
 #include "utils.h"
 #include <assert.h>
 
-using namespace arma;
 using namespace std;
 
 SkinnyGLM::SkinnyGLM(const mat &X, const vec &y, const double eta) :
@@ -14,22 +13,57 @@ SkinnyGLM::SkinnyGLM(const mat &X, const vec &y, const double eta) :
   g_start = join_vert(-Xy, Xy);
 }
 
-uword SkinnyGLM::createMatrixChunks(mat &x1, mat &x2, mat &x4,
-                                    const uvec &A, double multiplier){
+void SkinnyGLM::createMatrixChunks(mat &x1, mat &x2, mat &x4,
+                                    const uvec &A, const uvec &A_prev,
+                                    double multiplier){
   
   const uword divider = binarySearch(A, n_half);
   const uvec A_top = A.subvec(0, divider - 1);
   const uvec A_bottom = A.subvec(divider, A.n_rows-1) - n_half;
 
-  x1 = XX(A_top, A_top);
-  x1.diag() += multiplier;
-  
-  x2 = -XX(A_top, A_bottom);
-  
-  x4 = XX(A_bottom, A_bottom);
-  x4.diag() += multiplier;
+  // maybe I can get away with not needing to re-create
+  // some of the matrices. this happens if A_top or A_bottom haven't changed
+  // from the previous iteration.
+  if (A_prev.n_rows > 0){
+    uword A_prev_divider = binarySearch(A_prev, n_half);
+    const uvec A_prev_top = A_prev.subvec(0, A_prev_divider-1);
+    const uvec A_prev_bottom = A_prev.subvec(A_prev_divider, 
+                                              A_prev.n_rows-1) - n_half;
 
-  return divider;
+    bool changed = false;
+    // too bad, the active set for the top n variables changed.
+    if (A_top.n_rows != A_prev_top.n_rows 
+        || accu(A_top == A_prev_top) != A_top.n_rows) {
+      x1 = XX(A_top, A_top);
+      x1.diag() += multiplier;
+      changed = true;
+    }
+
+    // likewise for the bottom n variables.
+    if (A_bottom.n_rows != A_prev_bottom.n_rows 
+        || accu(A_bottom == A_prev_bottom) != A_bottom.n_rows) {
+      x4 = XX(A_bottom, A_bottom);
+      x4.diag() += multiplier;
+      changed = true;
+    }
+
+    // if any change occurred in the active set,
+    // we'll need to re-create x2.
+    if (changed){
+      x2 = -XX(A_top, A_bottom);
+    }
+
+  }
+  else {
+    x1 = XX(A_top, A_top);
+    x1.diag() += multiplier;
+  
+    x2 = -XX(A_top, A_bottom);
+  
+    x4 = XX(A_bottom, A_bottom);
+    x4.diag() += multiplier;
+  }
+
 }
 
 void SkinnyGLM::solve(colvec &z, double lambda, size_t max_iterations){
@@ -37,7 +71,7 @@ void SkinnyGLM::solve(colvec &z, double lambda, size_t max_iterations){
   assert(lambda > 0);
   const double multiplier = lambda * eta;
 
-  CG cg_solver;
+  SkinnyCG cg_solver;
   colvec delz_A, g_A;
   colvec u = z.subvec(0, n_half-1).unsafe_col(0);
   colvec l = z.subvec(n_half, n-1).unsafe_col(0);
@@ -45,7 +79,6 @@ void SkinnyGLM::solve(colvec &z, double lambda, size_t max_iterations){
   mat x1, x2, x4;
   size_t i;
   uvec A, A_prev;
-  uword divider = 0;
 
   const colvec g_init = g_start + multiplier;
 
@@ -56,26 +89,21 @@ void SkinnyGLM::solve(colvec &z, double lambda, size_t max_iterations){
     g.subvec(0, n_half-1) += g_half + u * multiplier;
     g.subvec(n_half, n-1) += -g_half + l * multiplier;
 
-    const uvec nonpos_g = find(g <= 0);
-    const uvec pos_z = find(z > 0);
-    vunion(nonpos_g, pos_z, A);
-
+    findActiveSet(g, z, A);
     if (A.n_rows == 0) break;
 
     if (A.n_rows == A_prev.n_rows && accu(A == A_prev) == A.n_rows){
-        cg_solver.skinnyMatrixSolve(x1, x2, x4, g_A,
-                                    delz_A, divider, true, 3);
+        cg_solver.solve(x1, x2, x4, g_A, delz_A, false);
     }
     else {
-        divider = createMatrixChunks(x1, x2, x4, A, multiplier);
-        delz_A.zeros(A.n_rows);
-        g_A = -g(A);
-        cg_solver.skinnyMatrixSolve(x1, x2, x4, g_A,
-                                    delz_A, divider, true, 3);
-        A_prev = A;
+      createMatrixChunks(x1, x2, x4, A, A_prev, multiplier);
+      delz_A.zeros(A.n_rows);
+      g_A = -g(A);
+      cg_solver.solve(x1, x2, x4, g_A, delz_A, true);
+      A_prev = A;
     }
     
-    if (norm(g_A, 2) <= .5) break;
+    if (norm(g_A, 2) <= G_A_TOL) break;
 
     update(z, A, delz_A);
     projectAndSparsify(w, u, l);

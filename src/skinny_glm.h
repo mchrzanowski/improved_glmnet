@@ -5,21 +5,18 @@ A class to deal with skinny (m > n) matrices
 */
 class SkinnyGLM : public GLM {
 
-  public:
-    SkinnyGLM(const arma::mat &X, const arma::vec &y, double eta);
+public:
+  SkinnyGLM(const mat &X, const vec &y, double eta);
 
-    void solve(arma::colvec &z, double lambda, 
-                size_t max_iterations);
+  void solve(colvec &z, double lambda, size_t max_iterations);
 
-  private:
-    arma::uword createMatrixChunks(arma::mat &x1,
-                                    arma::mat &x2,
-                                    arma::mat &x4,
-                                    const arma::uvec &A,
-                                    double multiplier);
+private:
+  void createMatrixChunks(mat &x1, mat &x2, mat &x4,
+                            const uvec &A, const uvec &A_prev,
+                            double multiplier);
 
-    arma::colvec g_start;
-    arma::mat XX;
-    const arma::uword n, n_half;
-    const double eta;
+  colvec g_start;
+  mat XX;
+  const uword n, n_half;
+  const double eta;
 };

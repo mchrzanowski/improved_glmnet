@@ -37,15 +37,6 @@ void vdifference(const ARMA_VECTOR_TYPE<T> &first,
     result = conv_to<ARMA_VECTOR_TYPE<T>>::from(output);
 }
 
-void fatMultiply(const mat &A1, const mat &A2,
-    const colvec &x1, const colvec &x2,
-    const double multiplier, colvec &y);
-
-void fatMultiply(const mat &A1, const mat &A2,
-    const colvec &x1, const colvec &x2,
-    const double multiplier, colvec &y1,
-    colvec &y2);
-
 /* search for the element index for which
   v(index - 1) < target && v(index) >= target
   obviously assumes that the vector is sorted 
