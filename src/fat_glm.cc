@@ -15,6 +15,11 @@ FatGLM::FatGLM(const mat &X_, const vec &y, double eta) :
   g_start = join_vert(-Xy, Xy);
 }
 
+double FatGLM::maxLambda(){
+  assert(eta > 0);
+  return 0.9 * norm(g_start, "inf") / eta;
+}
+
 /* x1 and x2 are the rows from X based on the active set A.
 x1 comes from the first n vals of X, x2 the bottom. */
 void FatGLM::createMatrixChunks(mat &x1, mat &x2,
@@ -23,7 +28,7 @@ void FatGLM::createMatrixChunks(mat &x1, mat &x2,
   // get the index of A that is at the boundary of the top
   // n elements and the bottom ones.
   uword divider = binarySearch(A, n_half);
-  
+
   const uvec A_top = A.subvec(0, divider-1);
   const uvec A_bottom = A.subvec(divider, A.n_rows-1) - n_half;
 
@@ -71,7 +76,6 @@ void FatGLM::solve(colvec &z, double lambda, size_t max_iterations){
   colvec Kz_A;
 
   for (i = 0; i < max_iterations; i++){
-
     const colvec g_half = ((X * w).t() * X).t();
     colvec g = g_start_with_multi;
     g.subvec(0, n_half-1) += g_half + u * multiplier;
@@ -81,16 +85,14 @@ void FatGLM::solve(colvec &z, double lambda, size_t max_iterations){
     if (A.n_rows == 0) break;
 
     if (A.n_rows == A_prev.n_rows && accu(A == A_prev) == A.n_rows){
-      cg_solver.solve(x1, x2, g_A,
-                      delz_A, multiplier, true, 3);
+      cg_solver.solve(x1, x2, g_A, delz_A, multiplier, false);
     }
     else {
       createMatrixChunks(x1, x2, A, A_prev);
       delz_A.zeros(A.n_rows);
       g_A = -g(A);
       g_start_with_multi_A = g_start_with_multi(A);
-      cg_solver.solve(x1, x2, g_A,
-                      delz_A, multiplier, true, 3);
+      cg_solver.solve(x1, x2, g_A, delz_A, multiplier, true);
       A_prev = A;
     }
 
@@ -106,8 +108,9 @@ void FatGLM::solve(colvec &z, double lambda, size_t max_iterations){
                                                 delz_A.n_rows-1).unsafe_col(0);
     colvec K_u_A(A.n_rows);
     fatMultiply(x1, x2, delz_A_top, delz_A_bottom, multiplier, K_u_A);
-
-    updateBetter(z, A, delz_A, K_z_A, K_u_A, g_start_with_multi_A);
+    
+    if (! update(z, A, delz_A, K_z_A, K_u_A, g_start_with_multi_A))
+      break;
     projectAndSparsify(w, u, l);
   }
   cout << "Iterations required: " << i << endl;

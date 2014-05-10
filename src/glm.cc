@@ -1,68 +1,9 @@
 #include <limits>
 #include <assert.h>
-#include "fat_glm.h"
 #include "glm.h"
-#include "skinny_glm.h"
-#include "test_glm.h"
 #include "utils.h"
 
 using namespace arma;
-
-/* perform cross validation, where we 
-  take in a list of lambda values, a ratio for
-  training/validation splitting, and problem data,
-  and return the lambda that has the best error
-  on the validation set */
-double GLM::crossValidate(const mat &X,
-                          const colvec &y,
-                          colvec &z,
-                          const std::vector<double> &lambdas,
-                          double eta,
-                          double split_ratio,
-                          size_t max_iterations){
-  // permute data.
-  uvec permute = shuffle(linspace<uvec>(0, X.n_rows-1, X.n_rows));
-  uword last_tr_sample = split_ratio * X.n_rows;
-
-  const mat X_train = X.rows(permute.subvec(0, last_tr_sample-1));
-  const colvec y_train = y(permute.subvec(0, last_tr_sample-1));
-
-  const mat X_test = X.rows(permute.subvec(last_tr_sample, permute.n_rows-1));
-  const colvec y_test = y(permute.subvec(last_tr_sample, permute.n_rows-1));
-
-  GLM *g = makeGLM(X_train, y_train, eta);
-  double best_lambda = -1;
-  double best_error = std::numeric_limits<double>::max();
-  for (const double &lambda: lambdas){
-    g->solve(z, lambda, max_iterations);
-    double error = evaluate(X_test, y_test, z, lambda, eta);
-    if (error < best_error){
-      best_lambda = lambda;
-      best_error = error;
-    }
-  }
-  return best_lambda;
-}
-
-/* create a GLM solver instance.
-  pick one based on whether the input data matrix 
-  is skinny, fat, or whether we should use the basic solver */
-GLM* GLM::makeGLM(const mat &X, const vec &y, double eta,
-                  bool unoptimized_solver){
-
-  if (unoptimized_solver){
-    std::cout << "Using TestGLM solver." << std::endl;
-    return new TestGLM(X, y, eta);
-  }
-  else if (X.n_cols >= 3 * X.n_rows){   // works well in practice.
-    std::cout << "Using FatGLM solver." << std::endl;
-    return new FatGLM(X, y, eta);
-  }
-  else {
-    std::cout << "Using SkinnyGLM solver." << std::endl;
-    return new SkinnyGLM(X, y, eta);
-  }
-}
 
 /* project to non-negative orphant */
 double GLM::clamp(double val){
@@ -81,20 +22,24 @@ double GLM::evaluate(const mat &X, const colvec &y, const colvec &z,
       + lambda * (eta * norm(w, 1) + .5 * (1 - eta) * sum(square(w)));
 }
 
-/* get a Bartisemas step length */
-void GLM::update(colvec &z, const uvec &A, const colvec &delz_A){
-  const double alpha = selectStepSize(A, z, delz_A);
-  z(A) += delz_A * alpha;
-}
-
-void GLM::updateBetter(colvec &z, const uvec &A, const colvec &delz_A,
+/* try to find a step size to improve z. return true if 
+we were able to find a valid step size, false otherwise */
+bool GLM::update(colvec &z, const uvec &A, const colvec &delz_A,
   const colvec &Kz, const colvec &Ku, const vec &eta){
-  double alpha = selectImprovedStepSize(A, eta, z, delz_A, Kz, Ku);
-  // this can fail. if it did, fall back to the Bartisemas step size.
+
+  // try to get the largest step possible.
+  double alpha = aggressiveStep(A, eta, z, delz_A, Kz, Ku);
+  
   if (alpha == 0) {
-    alpha = selectStepSize(A, z, delz_A);
+    // failed to get a step length. fall back to the Bertsekas step size,
+    // which is guaranteed to make progress...
+    alpha = conservativeStep(A, z, delz_A);
+    //..if there was still work to do. guess not. STOP EVERYTHING.
+    if (alpha == 0) return false;
   }
+  
   z(A) += delz_A * alpha;
+  return true;
 }
 
 /* project vector to non-negative orphant.
@@ -117,19 +62,20 @@ void GLM::sparsify(colvec &w, colvec &u, colvec &l){
 }
 
 /* secret sauce that needs a fat, proper comment */
-double GLM::selectImprovedStepSize(const uvec &A, const vec &eta,
-                                    colvec &z, const colvec &delz_A, 
-                                    const colvec &Kz, const colvec &Ku){
+double GLM::aggressiveStep(const uvec &A, const vec &eta,
+                            colvec &z, const colvec &delz_A, 
+                            const colvec &Kz, const colvec &Ku){
 
   // approximation of gradient at a knot.
-  const auto approx = [](double alpha, double p,
-                          double q) { return p * alpha + q; };
+  const auto approx = [](double alpha, double p, double q)
+                        { return p * alpha + q; };
   colvec z_A = z(A);
 
   // find all indices for which, after a full step size,
   // we're nonpositive.
   uvec D = find(delz_A + z_A <= 0);
 
+  // FAILURE.
   if (D.n_rows == 0) return 0;
 
   const vec alphas = -z_A(D) / delz_A(D);
@@ -172,8 +118,9 @@ double GLM::selectImprovedStepSize(const uvec &A, const vec &eta,
   return 1;
 }
 
-/* Bertsekas[82] shows the first knot is always a safe step size */
-double GLM::selectStepSize(const uvec &A, colvec &z, const colvec &delz_A){
+/* Bertsekas[82] shows the first knot is always a safe step size (if
+there is still any work to do) */
+double GLM::conservativeStep(const uvec &A, colvec &z, const colvec &delz_A){
 
   colvec z_A = z(A);
   const uvec neg_gradient = find(delz_A < 0);
@@ -181,7 +128,9 @@ double GLM::selectStepSize(const uvec &A, colvec &z, const colvec &delz_A){
 
   uvec D;
   vintersection(neg_gradient, pos_z, D);
-  assert(D.n_rows > 0);
+
+  // there is absolutely no work left to do. FAILURE.
+  if (D.n_rows == 0) return 0;
 
   const vec alphas = z_A(D) / delz_A(D);
   double alpha = std::min(-max(alphas), 1.0);

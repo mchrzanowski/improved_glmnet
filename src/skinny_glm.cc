@@ -14,6 +14,11 @@ SkinnyGLM::SkinnyGLM(const mat &X, const vec &y, const double eta) :
   g_start = join_vert(-Xy, Xy);
 }
 
+double SkinnyGLM::maxLambda(){
+  assert(eta > 0);
+  return norm(g_start, "inf") / eta;
+}
+
 void SkinnyGLM::createMatrixChunks(mat &x1, mat &x2, mat &x4,
                                     const uvec &A, const uvec &A_prev,
                                     double multiplier){
@@ -119,7 +124,8 @@ void SkinnyGLM::solve(colvec &z, double lambda, size_t max_iterations){
     colvec K_u_A(A.n_rows);
     skinnyMultiply(x1, x2, x4, delz_A_top, delz_A_bottom, K_u_A);
 
-    updateBetter(z, A, delz_A, K_z_A, K_u_A, g_start_with_multi_A);
+    if (! update(z, A, delz_A, K_z_A, K_u_A, g_start_with_multi_A))
+      break;
     projectAndSparsify(w, u, l);
   }
 

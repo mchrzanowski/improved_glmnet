@@ -12,6 +12,8 @@ public:
   void solve(arma::colvec &z, const double lambda, 
               const size_t max_iterations);
 
+  double maxLambda();
+
 private:
   arma::colvec g_start;
   arma::mat XX, K;

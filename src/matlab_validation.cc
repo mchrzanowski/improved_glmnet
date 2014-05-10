@@ -1,7 +1,7 @@
 #include <armadillo>
 #include <assert.h>
 #include <iostream>
-#include "glm.h"
+#include "glm_factory.h"
 
 using namespace std;
 using namespace arma;
@@ -50,29 +50,11 @@ int main(int argc, char **argv){
     << "\t" << b.n_rows << "\t" 
     << z.n_rows << endl;
 
-  /*std::vector<double> lambdas = std::vector<double>();
-  lambdas.push_back(0.03125);
-  lambdas.push_back(0.0625);
-  lambdas.push_back(0.125);
-  lambdas.push_back(0.25);
-  lambdas.push_back(0.5);
-  lambdas.push_back(1);
-  lambdas.push_back(2);
-  lambdas.push_back(4);
-  lambdas.push_back(8);
-  lambdas.push_back(16);
-  double best = GLM::crossValidate(A, b, z, lambdas, eta, 0.8, 12000);
-  cout << "Best lambda: " << best << endl;
-  run(g, A, b, z, best / 2, eta, iterations);
-  run(g, A, b, z, best, eta, iterations);*/
-
   cout << "Eta: " << eta << endl
     << "Max Iters: " << iterations << endl;
 
-  GLM *g = GLM::makeGLM(A, b, eta, use_stupid_solver);
-  //run(g, A, b, z, lambda / 2, eta, iterations);
+  GLM *g = makeGLM(A, b, eta, use_stupid_solver);
   run(g, A, b, z, lambda, eta, iterations);
-  //run(g, A, b, z, lambda * 2, eta, iterations);
 
   delete g; 
 }

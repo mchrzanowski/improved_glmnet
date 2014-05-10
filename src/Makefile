@@ -4,23 +4,31 @@ CXX = g++
 RM = rm -f
 
 # flags
-CXXFLAGS = -std=c++0x -march=native -Wall -O4 -I/usr/include -I/usr/local/include \
-	-L/usr/local/lib -L/opt/intel/lib/intel64 -L/opt/intel/mkl/lib/intel64
+CXXFLAGS = -std=c++0x -march=native -Wall -O4 -I/usr/include \
+	-I/usr/local/include -L/usr/local/lib -L/opt/intel/lib/intel64 \
+	-L/opt/intel/mkl/lib/intel64
 LDFLAGS = -larmadillo -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5
 
 # In this section, you list the files that are part of the project.
 # If you add/change names of header/source files, here is where you
 # edit the Makefile.
-SOURCES = cg.cc utils.cc glm.cc skinny_glm.cc fat_glm.cc test_glm.cc \
-	fat_utils.cc fat_cg.cc skinny_cg.cc skinny_utils.cc
-HEADERS = $(SOURCES:.cc=.h)
+SOURCES = cg.cc glm.cc skinny_glm.cc fat_glm.cc test_glm.cc \
+	fat_utils.cc fat_cg.cc skinny_cg.cc skinny_utils.cc glm_factory.cc
+HEADERS = $(SOURCES:.cc=.h) utils.h
 OBJECTS = $(SOURCES:.cc=.o)
+
 TARGETS = glmnet.out
-TESTS = matlab_validation.out
+MATLAB = matlab_validation.out
+CV = cv_validation.out
 
 default: $(TARGETS)
 
-test: $(TESTS)
+matlab: $(MATLAB)
+
+cv: $(CV)
+
+cv_validation: $(OBJECTS) cv_validation.cc
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
 glmnet.out: $(OBJECTS) main.cc
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)

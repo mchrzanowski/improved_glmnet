@@ -10,6 +10,8 @@ public:
 
   void solve(colvec &z, double lambda, size_t max_iterations);
 
+  double maxLambda();
+
 private:
   void createMatrixChunks(mat &x1, mat &x2, mat &x4,
                             const uvec &A, const uvec &A_prev,

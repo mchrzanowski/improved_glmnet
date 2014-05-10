@@ -18,6 +18,11 @@ TestGLM::TestGLM(const mat &X, const vec &y, double eta) :
   g_start = join_vert(-Xy, Xy);
 }
 
+double TestGLM::maxLambda(){
+  assert(eta > 0);
+  return norm(g_start, "inf") / eta;
+}
+
 void TestGLM::solve(colvec &z, double lambda, size_t max_iterations){
 
   assert(lambda > 0);
@@ -64,7 +69,8 @@ void TestGLM::solve(colvec &z, double lambda, size_t max_iterations){
 
     const colvec Kz = K_A * z(A);
     const colvec Ku = K_A * delz_A;
-    updateBetter(z, A, delz_A, Kz, Ku, g_init(A));
+    if (! update(z, A, delz_A, Kz, Ku, g_init(A)))
+      break;
     projectAndSparsify(w, u, l);
   }
 
