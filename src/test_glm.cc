@@ -64,8 +64,7 @@ void TestGLM::solve(colvec &z, double lambda, size_t max_iterations){
 
     const colvec Kz = K_A * z(A);
     const colvec Ku = K_A * delz_A;
-    bool progress_made = updateBetter(z, A, delz_A, Kz, Ku, g_init(A));
-    if (! progress_made) break;
+    updateBetter(z, A, delz_A, Kz, Ku, g_init(A));
     projectAndSparsify(w, u, l);
   }
 

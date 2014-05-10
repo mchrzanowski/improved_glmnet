@@ -119,9 +119,7 @@ void SkinnyGLM::solve(colvec &z, double lambda, size_t max_iterations){
     colvec K_u_A(A.n_rows);
     skinnyMultiply(x1, x2, x4, delz_A_top, delz_A_bottom, K_u_A);
 
-    bool progress_made = updateBetter(z, A, delz_A, K_z_A, K_u_A,
-                                      g_start_with_multi_A);
-    if (! progress_made) break;
+    updateBetter(z, A, delz_A, K_z_A, K_u_A, g_start_with_multi_A);
     projectAndSparsify(w, u, l);
   }
 

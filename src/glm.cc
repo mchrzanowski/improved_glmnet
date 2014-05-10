@@ -87,12 +87,14 @@ void GLM::update(colvec &z, const uvec &A, const colvec &delz_A){
   z(A) += delz_A * alpha;
 }
 
-bool GLM::updateBetter(colvec &z, const uvec &A, const colvec &delz_A,
+void GLM::updateBetter(colvec &z, const uvec &A, const colvec &delz_A,
   const colvec &Kz, const colvec &Ku, const vec &eta){
-  const double alpha = selectImprovedStepSize(A, eta, z, delz_A, Kz, Ku);
-  if (alpha == 0) return false;
+  double alpha = selectImprovedStepSize(A, eta, z, delz_A, Kz, Ku);
+  // this can fail. if it did, fall back to the Bartisemas step size.
+  if (alpha == 0) {
+    alpha = selectStepSize(A, z, delz_A);
+  }
   z(A) += delz_A * alpha;
-  return true;
 }
 
 /* project vector to non-negative orphant.
@@ -128,7 +130,7 @@ double GLM::selectImprovedStepSize(const uvec &A, const vec &eta,
   // we're nonpositive.
   uvec D = find(delz_A + z_A <= 0);
 
-  assert(D.n_rows > 0);
+  if (D.n_rows == 0) return 0;
 
   const vec alphas = -z_A(D) / delz_A(D);
   const uvec sorted_indices = sort_index(alphas);

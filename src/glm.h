@@ -39,7 +39,7 @@ protected:
               const uvec &A,
               const colvec &delz_A);
 
-  bool updateBetter(colvec &z,
+  void updateBetter(colvec &z,
                     const uvec &A,
                     const colvec &delz_A,
                     const colvec &Kz, 
