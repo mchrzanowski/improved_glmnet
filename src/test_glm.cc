@@ -20,7 +20,7 @@ TestGLM::TestGLM(const mat &X, const vec &y, double eta) :
 
 double TestGLM::maxLambda(){
   assert(eta > 0);
-  return norm(g_start, "inf") / eta;
+  return 0.9 * norm(g_start, "inf") / eta;
 }
 
 void TestGLM::solve(colvec &z, double lambda, size_t max_iterations){

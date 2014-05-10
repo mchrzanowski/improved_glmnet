@@ -16,7 +16,7 @@ SkinnyGLM::SkinnyGLM(const mat &X, const vec &y, const double eta) :
 
 double SkinnyGLM::maxLambda(){
   assert(eta > 0);
-  return norm(g_start, "inf") / eta;
+  return 0.9 * norm(g_start, "inf") / eta;
 }
 
 void SkinnyGLM::createMatrixChunks(mat &x1, mat &x2, mat &x4,
