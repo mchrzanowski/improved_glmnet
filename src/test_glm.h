@@ -12,11 +12,7 @@ public:
   void solve(arma::colvec &z, const double lambda, 
               const size_t max_iterations);
 
-  double maxLambda();
-
 private:
-  arma::colvec g_start;
   arma::mat XX, K;
   const arma::uword n_half;
-  const double eta;
 };

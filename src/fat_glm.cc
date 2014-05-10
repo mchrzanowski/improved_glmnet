@@ -8,16 +8,11 @@ using namespace arma;
 using namespace std;
 
 FatGLM::FatGLM(const mat &X_, const vec &y, double eta) :
-                X(X_), n(2*X.n_cols), n_half(X.n_cols), eta(eta) {
+                GLM(eta), X(X_), n(2*X.n_cols), n_half(X.n_cols) {
 
   assert(eta >= 0 && eta <= 1);
   const colvec Xy = (y.t() * X).t();
   g_start = join_vert(-Xy, Xy);
-}
-
-double FatGLM::maxLambda(){
-  assert(eta > 0);
-  return 0.9 * norm(g_start, "inf") / eta;
 }
 
 /* x1 and x2 are the rows from X based on the active set A.

@@ -7,16 +7,11 @@
 using namespace std;
 
 SkinnyGLM::SkinnyGLM(const mat &X, const vec &y, const double eta) :
-                      n(2*X.n_cols), n_half(X.n_cols), eta(eta) {
+                      GLM(eta), n(2*X.n_cols), n_half(X.n_cols) {
   assert(eta >= 0 && eta <= 1);    
   XX = symmatu(X.t() * X);
   const colvec Xy = (y.t() * X).t();
   g_start = join_vert(-Xy, Xy);
-}
-
-double SkinnyGLM::maxLambda(){
-  assert(eta > 0);
-  return 0.9 * norm(g_start, "inf") / eta;
 }
 
 void SkinnyGLM::createMatrixChunks(mat &x1, mat &x2, mat &x4,

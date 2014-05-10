@@ -7,7 +7,7 @@ using namespace arma;
 using namespace std;
 
 TestGLM::TestGLM(const mat &X, const vec &y, double eta) : 
-                  n_half(X.n_cols), eta(eta) {
+                  GLM(eta), n_half(X.n_cols) {
 
   assert(eta >= 0 && eta <= 1);
 
@@ -16,11 +16,6 @@ TestGLM::TestGLM(const mat &X, const vec &y, double eta) :
 
   const colvec Xy = XXT * y;
   g_start = join_vert(-Xy, Xy);
-}
-
-double TestGLM::maxLambda(){
-  assert(eta > 0);
-  return 0.9 * norm(g_start, "inf") / eta;
 }
 
 void TestGLM::solve(colvec &z, double lambda, size_t max_iterations){

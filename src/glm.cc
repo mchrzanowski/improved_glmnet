@@ -5,9 +5,16 @@
 
 using namespace arma;
 
+GLM::GLM(double eta) : eta(eta) {}
+
 /* project to non-negative orphant */
 double GLM::clamp(double val){
   return std::max(val, 0.);
+}
+
+double GLM::maxLambda(){
+  assert(eta > 0);
+  return 0.9 * norm(g_start, "inf") / eta;
 }
 
 /* evlaute the elastic net function value for a given

@@ -9,11 +9,13 @@ public:
 
   virtual ~GLM();
 
+  GLM(double eta);
+
   virtual void solve(colvec &z,
                       double lambda, 
                       size_t max_iterations) = 0;
 
-  virtual double maxLambda() = 0;
+  double maxLambda();
 
   static double evaluate(const mat &X,
                           const colvec &y,
@@ -23,6 +25,8 @@ public:
 
 protected:
   const double G_A_TOL = 0.5;
+  colvec g_start;
+  const double eta;
 
   bool update(colvec &z,
               const uvec &A,
