@@ -27,7 +27,7 @@ matlab: $(MATLAB)
 
 cv: $(CV)
 
-cv_validation: $(OBJECTS) cv_validation.cc
+cv_validation.out: $(OBJECTS) cv_validation.cc
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
 glmnet.out: $(OBJECTS) main.cc
