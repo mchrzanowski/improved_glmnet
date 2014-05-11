@@ -37,8 +37,11 @@ void vdifference(const ARMA_VECTOR_TYPE<T> &first,
   result = conv_to<ARMA_VECTOR_TYPE<T>>::from(output);
 }
 
+/* split a vector in two given a dividing element. 
+be careful to consider what happens if all the elements will be
+on one side or the other... */
 template<typename T, template <typename> class ARMA_VECTOR_TYPE>
-void safeCut(ARMA_VECTOR_TYPE<T> &top, ARMA_VECTOR_TYPE<T> &bottom,
+void cutVector(ARMA_VECTOR_TYPE<T> &top, ARMA_VECTOR_TYPE<T> &bottom,
               const ARMA_VECTOR_TYPE<T> &original, uword divider, uword bias){
   if (divider > 0)
     top = original.subvec(0, divider-1);

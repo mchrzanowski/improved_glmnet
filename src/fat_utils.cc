@@ -40,7 +40,6 @@ void fatMultiply(const mat &A1, const mat &A2,
   if (A1.n_rows > 0 && A1.n_cols > 0 && A2.n_rows > 0 && A2.n_cols > 0){
     const rowvec x1_x_top = (A1 * x1).t();
     const rowvec x2_x_bottom = (A2 * x2).t();
-
     y1 = (x1_x_top * A1 - x2_x_bottom * A1).t() + x1 * multiplier;
     y2 = (-x1_x_top * A2 + x2_x_bottom * A2).t() + x2 * multiplier;
   }
@@ -54,3 +53,5 @@ void fatMultiply(const mat &A1, const mat &A2,
   }
 
 }
+
+

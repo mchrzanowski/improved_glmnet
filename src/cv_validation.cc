@@ -16,7 +16,7 @@ argv[5] = location of initial z vector
 */
 int main(int argc, char **argv){
 
-  assert(argc == 7);
+  assert(argc == 6);
   arma_rng::set_seed(0);
 
   double eta = strtod(argv[1], NULL);

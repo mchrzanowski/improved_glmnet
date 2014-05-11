@@ -24,7 +24,7 @@ public:
                           double eta);
 
 protected:
-  const double G_A_TOL = 0.5;
+  const double G_A_TOL = 5e-1;
   colvec g_start;
   const double eta;
 
@@ -32,7 +32,7 @@ protected:
               const uvec &A,
               const colvec &delz_A,
               const colvec &Kz, 
-              const colvec &Ku, 
+              const colvec &Ku,
               const vec &eta);
 
   void projectAndSparsify(colvec &w,
@@ -43,11 +43,11 @@ protected:
 
 private:
   static double clamp(double val);
-    
+  
   void sparsify(colvec &w,
                 colvec &u,
                 colvec &l);
-    
+
   double conservativeStep(const uvec &A,
                           colvec &z,
                           const colvec &delz_A);

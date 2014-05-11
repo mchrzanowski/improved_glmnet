@@ -25,7 +25,7 @@ void FatGLM::createMatrixChunks(mat &x1, mat &x2,
   // n elements and the bottom ones.
   uword divider = binarySearch(A, n_half);
   uvec A_top, A_bottom;
-  safeCut(A_top, A_bottom, A, divider, n_half);
+  cutVector(A_top, A_bottom, A, divider, n_half);
 
   // maybe I can get away with not needing to re-create
   // x1 or x2. this happens if A_top or A_bottom haven't changed
@@ -34,7 +34,7 @@ void FatGLM::createMatrixChunks(mat &x1, mat &x2,
     
     uword A_prev_divider = binarySearch(A_prev, n_half);
     uvec A_prev_top, A_prev_bottom;
-    safeCut(A_prev_top, A_prev_bottom, A_prev, A_prev_divider, n_half);
+    cutVector(A_prev_top, A_prev_bottom, A_prev, A_prev_divider, n_half);
 
     // too bad, the active set for the top n variables changed.
     if (A_top.n_rows != A_prev_top.n_rows 
@@ -99,7 +99,7 @@ void FatGLM::solve(colvec &z, double lambda, size_t max_iterations){
     const colvec K_z_A = -g_A - g_start_with_multi_A;
 
     colvec delz_A_top, delz_A_bottom;
-    safeCut(delz_A_top, delz_A_bottom, delz_A, divider, 0);
+    cutVector(delz_A_top, delz_A_bottom, delz_A, divider, 0);
 
     colvec K_u_A(A.n_rows);
     fatMultiply(x1, x2, delz_A_top, delz_A_bottom, multiplier, K_u_A);

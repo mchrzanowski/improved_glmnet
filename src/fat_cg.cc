@@ -1,6 +1,47 @@
 #include "fat_cg.h"
 #include "fat_utils.h"
 
+/* solve a special case where only 
+  one of the matrices passed to the solve function
+  is non-empty. */
+void FatCG::subsolve(const mat &X, 
+          const vec &b,
+          vec &x,
+          double multiplier,
+          bool restart,
+          size_t iterations){
+
+  // non-needed data.
+  mat X_dummy;
+  vec b_dummy;
+  vec x_dummy;
+
+  if (restart) {
+    fatMultiply(X, X_dummy, x, x_dummy, multiplier, r_top, r_bottom);
+    r_top -= b;
+    p_top = -r_top;
+    prev_r_sq_sum = dot(r_top, r_top);
+  }
+
+  for (size_t i = 0; i < iterations && prev_r_sq_sum > RESIDUAL_TOL; i++){
+    colvec Ap_top(p_top.n_rows), Ap_bottom;
+    fatMultiply(X, X_dummy, p_top, x_dummy, multiplier, Ap_top, Ap_bottom);
+
+    const double alpha = prev_r_sq_sum / dot(p_top, Ap_top);
+
+    x += alpha * p_top;    
+    r_top += alpha * Ap_top;
+    
+    const double r_sq_sum = dot(r_top, r_top);
+    const double beta = r_sq_sum / prev_r_sq_sum;
+
+    p_top *= beta;
+    p_top -= r_top;
+    prev_r_sq_sum = r_sq_sum;
+  }
+
+}
+
 void FatCG::solve(const mat &x1, 
                   const mat &x2,
                   const vec &b,
@@ -11,31 +52,36 @@ void FatCG::solve(const mat &x1,
 
   const uword half = x1.n_cols;
 
-  vec x_top;
-  vec b_top;
-  if (half > 0){
-    x_top = x.subvec(0, half-1);
-    b_top = b.subvec(0, half-1);
+  /* two special cases when one of x1 or x2 are empty.
+  as opposed to polluting the below code with lots of if
+  statements to guard against either one being empty,
+  just call this other method that only assumes one is nonempty*/
+  if (x1.n_rows == 0 || x1.n_cols == 0){
+    vec x_bottom = x.subvec(half, x.n_rows-1).unsafe_col(0);
+    colvec b_bottom = b.subvec(half, x.n_rows-1).unsafe_col(0);
+    return subsolve(x2, b_bottom, x_bottom, multiplier, restart, iterations);
   }
-  
-  vec x_bottom;
-  vec b_bottom;
-  if (half < x.n_rows){
-    x_bottom = x.subvec(half, x.n_rows-1);
-    b_bottom = b.subvec(half, x.n_rows-1);
+  else if (x2.n_rows == 0 || x2.n_cols == 0){
+    vec x_top = x.subvec(0, half-1).unsafe_col(0);
+    const vec b_top = b.subvec(0, half-1).unsafe_col(0);
+    return subsolve(x1, b_top, x_top, multiplier, restart, iterations);
   }
+
+  vec x_top = x.subvec(0, half-1).unsafe_col(0);
+  vec x_bottom = x.subvec(half, x.n_rows-1).unsafe_col(0);
+
+  const vec b_top = b.subvec(0, half-1).unsafe_col(0);
+  const vec b_bottom = b.subvec(half, x.n_rows-1).unsafe_col(0);
 
   if (restart) {
-    fatMultiply(x1, x2, x_top, x_bottom, multiplier, r_top, r_bottom);
 
-    if (x_top.n_rows > 0){
-      r_top -= b_top;
-      p_top = -r_top;
-    }
-    if (x_bottom.n_rows > 0){
-      r_bottom -= b_bottom;
-      p_bottom = -r_bottom;
-    }
+    fatMultiply(x1, x2, x_top, x_bottom, multiplier, r_top, r_bottom);
+    
+    r_top -= b_top;
+    r_bottom -= b_bottom;
+
+    p_top = -r_top;
+    p_bottom = -r_bottom;
     prev_r_sq_sum = dot(r_top, r_top) + dot(r_bottom, r_bottom);
   }
 
@@ -46,36 +92,22 @@ void FatCG::solve(const mat &x1,
     const double alpha = prev_r_sq_sum / 
         (dot(p_top, Ap_top) + dot(p_bottom, Ap_bottom));
 
-    if (x_top.n_rows > 0){
-      x_top += alpha * p_top;
-      r_top += alpha * Ap_top;
-    }
-    if (x_bottom.n_rows > 0){
-      x_bottom += alpha * p_bottom;
-      r_bottom += alpha * Ap_bottom;
-    }
-   
+    x_top += alpha * p_top;
+    x_bottom += alpha * p_bottom;
+    
+    r_top += alpha * Ap_top;
+    r_bottom += alpha * Ap_bottom;
+    
     const double r_sq_sum = dot(r_top, r_top) + dot(r_bottom, r_bottom);
     const double beta = r_sq_sum / prev_r_sq_sum;
 
-    if (p_top.n_rows > 0){
-      p_top *= beta;
-      p_top -= r_top;
-    }
+    p_top *= beta;
+    p_top -= r_top;
     
-    if (p_bottom.n_rows > 0){
-     p_bottom *= beta;
-      p_bottom -= r_bottom; 
-    }
+    p_bottom *= beta;
+    p_bottom -= r_bottom;
+    
     prev_r_sq_sum = r_sq_sum;
-  }
-
-  if (half > 0){
-    x.subvec(0, half-1) = x_top;
-  }
-  
-  if (half < x.n_rows){
-    x.subvec(half, x.n_rows-1) = x_bottom;
   }
 
 }

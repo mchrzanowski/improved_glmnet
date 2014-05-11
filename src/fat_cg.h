@@ -13,6 +13,13 @@ public:
               size_t iterations=3);
 
 private:
+  void subsolve(const mat &X, 
+            const vec &b,
+            vec &x,
+            double multiplier,
+            bool restart,
+            size_t iterations);
+
     const double RESIDUAL_TOL = 1e-3;
     double prev_r_sq_sum;
     arma::vec p_top, p_bottom, r_top, r_bottom;

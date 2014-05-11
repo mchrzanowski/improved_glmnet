@@ -60,7 +60,7 @@ void TestGLM::solve(colvec &z, double lambda, size_t max_iterations){
       A_prev = A;
     }
 
-    if (norm(g_A, 2) <= 1) break;
+    if (norm(g_A, 2) <= G_A_TOL) break;
 
     const colvec Kz = K_A * z(A);
     const colvec Ku = K_A * delz_A;
