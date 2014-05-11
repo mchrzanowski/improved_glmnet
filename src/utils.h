@@ -52,26 +52,23 @@ void safeCut(ARMA_VECTOR_TYPE<T> &top, ARMA_VECTOR_TYPE<T> &bottom,
   in ascending order */
 template<typename T, template <typename> class ARMA_VECTOR_TYPE>
 uword binarySearch(const ARMA_VECTOR_TYPE<T> &v, const uword target){
-  /*uword start = 0;
+
+  uword start = 0;
   uword end = v.n_rows - 1;
+
   while (true){
     uword mid = (start + end) / 2;
     if (end <= start) return mid;
     if (mid > 0 && v[mid - 1] < target && v[mid] >= target)
       return mid;
-    if (mid == 0 && v[mid] >= target)
-      return mid;
     if (mid == v.n_rows - 1 && v[mid] < target)
-      return v.n_rows; 
+      return v.n_rows;
+    if (mid == 0 && v[0] >= target)
+      return 0; 
     if (v[mid] < target)
       start = mid + 1;
     else
       end = mid - 1;
-  }*/
-  uword i;
-  for (i = 0; i < v.n_rows; i++){
-    if (v[i] >= target)
-      break;
   }
-  return i;
+
 }
