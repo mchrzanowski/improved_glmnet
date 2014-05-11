@@ -59,19 +59,23 @@ uword binarySearch(const ARMA_VECTOR_TYPE<T> &v, const uword target){
   uword start = 0;
   uword end = v.n_rows - 1;
 
+  // two edges cases to deal with up front.
+  // are all elements on the left split?
+  if (v[end] < target)
+    return v.n_rows;
+
+  // are they all on the right?
+  if (v[start] >= target)
+    return start; 
+
   while (true){
     uword mid = (start + end) / 2;
     if (end <= start) return mid;
     if (mid > 0 && v[mid - 1] < target && v[mid] >= target)
       return mid;
-    if (mid == v.n_rows - 1 && v[mid] < target)
-      return v.n_rows;
-    if (mid == 0 && v[0] >= target)
-      return 0; 
     if (v[mid] < target)
       start = mid + 1;
     else
       end = mid - 1;
   }
-
 }

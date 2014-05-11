@@ -44,7 +44,6 @@ bool GLM::update(colvec &z, const uvec &A, const colvec &delz_A,
     //..if there was still work to do. guess not. STOP EVERYTHING.
     if (alpha == 0) return false;
   }
-  
   z(A) += delz_A * alpha;
   return true;
 }
