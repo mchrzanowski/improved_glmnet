@@ -11,21 +11,16 @@ void FatCG::subsolve(const mat &X,
           bool restart,
           size_t iterations){
 
-  // non-needed data.
-  mat X_dummy;
-  vec b_dummy;
-  vec x_dummy;
-
   if (restart) {
-    fatMultiply(X, X_dummy, x, x_dummy, multiplier, r_top, r_bottom);
+    fatMultiply(X, x, multiplier, r_top);
     r_top -= b;
     p_top = -r_top;
     prev_r_sq_sum = dot(r_top, r_top);
   }
 
   for (size_t i = 0; i < iterations && prev_r_sq_sum > RESIDUAL_TOL; i++){
-    colvec Ap_top(p_top.n_rows), Ap_bottom;
-    fatMultiply(X, X_dummy, p_top, x_dummy, multiplier, Ap_top, Ap_bottom);
+    colvec Ap_top(p_top.n_rows);
+    fatMultiply(X, p_top, multiplier, Ap_top);
 
     const double alpha = prev_r_sq_sum / dot(p_top, Ap_top);
 
