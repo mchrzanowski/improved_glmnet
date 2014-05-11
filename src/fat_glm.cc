@@ -2,6 +2,7 @@
 #include "fat_cg.h"
 #include "fat_glm.h"
 #include "fat_utils.h"
+#include "cg.h"
 #include "utils.h"
 
 using namespace arma;
@@ -23,18 +24,18 @@ void FatGLM::createMatrixChunks(mat &x1, mat &x2,
   // get the index of A that is at the boundary of the top
   // n elements and the bottom ones.
   uword divider = binarySearch(A, n_half);
-
-  const uvec A_top = A.subvec(0, divider-1);
-  const uvec A_bottom = A.subvec(divider, A.n_rows-1) - n_half;
+  uvec A_top, A_bottom;
+  safeCut(A_top, A_bottom, A, divider, n_half);
+  //cout << "GOOD: " << A.t() << "\t" << A_top.t() << "\t" << A_bottom.t() << endl;
 
   // maybe I can get away with not needing to re-create
   // x1 or x2. this happens if A_top or A_bottom haven't changed
   // from the previous iteration.
-  if (A_prev.n_rows > 0){
+  /*if (A_prev.n_rows > 0){
+    
     uword A_prev_divider = binarySearch(A_prev, n_half);
-    const uvec A_prev_top = A_prev.subvec(0, A_prev_divider-1);
-    const uvec A_prev_bottom = A_prev.subvec(A_prev_divider, 
-                                              A_prev.n_rows-1) - n_half;
+    uvec A_prev_top, A_prev_bottom;
+    safeCut(A_prev_top, A_prev_bottom, A_prev, A_prev_divider, n_half);
 
     // too bad, the active set for the top n variables changed.
     if (A_top.n_rows != A_prev_top.n_rows 
@@ -48,10 +49,12 @@ void FatGLM::createMatrixChunks(mat &x1, mat &x2,
       x2 = X.cols(A_bottom);
     }
   }
-  else {
+  else {*/
     x1 = X.cols(A_top);
     x2 = X.cols(A_bottom);
-  }
+  //}
+
+    //cout << x1.n_rows << "x" << x1.n_cols << "\t" << x2.n_rows << "x" << x2.n_cols << endl;
 }
 
 void FatGLM::solve(colvec &z, double lambda, size_t max_iterations){
@@ -78,19 +81,24 @@ void FatGLM::solve(colvec &z, double lambda, size_t max_iterations){
     
     findActiveSet(g, z, A);    
     if (A.n_rows == 0) break;
-
+    //cout << "1: " << i << endl;
     if (A.n_rows == A_prev.n_rows && accu(A == A_prev) == A.n_rows){
+      //cout << "1a: " << i << endl;
       cg_solver.solve(x1, x2, g_A, delz_A, multiplier, false);
+      //cout << "1b: " << i << endl;
     }
     else {
+      //cout << "1c: " << i << endl;
       createMatrixChunks(x1, x2, A, A_prev);
+      //cout << "1d: " << i << endl;
       delz_A.zeros(A.n_rows);
       g_A = -g(A);
       g_start_with_multi_A = g_start_with_multi(A);
-      cg_solver.solve(x1, x2, g_A, delz_A, multiplier, true);
+
+      cg_solver.solve(x1, x2, g_A, delz_A, multiplier, true);  
       A_prev = A;
     }
-
+    //cout << "2: " << i << endl;
     if (norm(g_A, 2) <= G_A_TOL) break;
     const uword divider = x1.n_cols;
 
@@ -98,15 +106,15 @@ void FatGLM::solve(colvec &z, double lambda, size_t max_iterations){
     // that as part of the gradient.
     const colvec K_z_A = -g_A - g_start_with_multi_A;
 
-    const colvec delz_A_top = delz_A.subvec(0, divider - 1).unsafe_col(0);
-    const colvec delz_A_bottom = delz_A.subvec(divider,
-                                                delz_A.n_rows-1).unsafe_col(0);
+    colvec delz_A_top, delz_A_bottom;
+    safeCut(delz_A_top, delz_A_bottom, delz_A, divider, 0);
+
     colvec K_u_A(A.n_rows);
     fatMultiply(x1, x2, delz_A_top, delz_A_bottom, multiplier, K_u_A);
-    
+    //cout << "3: " << i << endl;
     if (! update(z, A, delz_A, K_z_A, K_u_A, g_start_with_multi_A))
       break;
     projectAndSparsify(w, u, l);
   }
-  cout << "Iterations required: " << i << endl;
+  //cout << "Iterations required: " << i << endl;
 }

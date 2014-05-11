@@ -45,7 +45,7 @@ double crossValidate(const mat &X,
   const mat X_test = X.rows(permute.subvec(last_tr_sample, permute.n_rows-1));
   const colvec y_test = y(permute.subvec(last_tr_sample, permute.n_rows-1));
 
-  GLM *g = makeGLM(X_train, y_train, eta);
+  GLM *g = makeGLM(X, y, eta);
   double best_lambda = -1;
   double best_error = std::numeric_limits<double>::max();
 
@@ -59,7 +59,7 @@ double crossValidate(const mat &X,
     timer.tic();
     g->solve(z, lambda, max_iterations);
     double time = timer.toc();
-    double error = GLM::evaluate(X_test, y_test, z, lambda, eta);
+    double error = GLM::evaluate(X, y, z, lambda, eta);
     std::cout << "Lambda: " << lambda << "\tError:" << error << "\tRuntime:" << time << std::endl;
     if (error < best_error){
       best_lambda = lambda;

@@ -37,22 +37,41 @@ void vdifference(const ARMA_VECTOR_TYPE<T> &first,
   result = conv_to<ARMA_VECTOR_TYPE<T>>::from(output);
 }
 
+template<typename T, template <typename> class ARMA_VECTOR_TYPE>
+void safeCut(ARMA_VECTOR_TYPE<T> &top, ARMA_VECTOR_TYPE<T> &bottom,
+              const ARMA_VECTOR_TYPE<T> &original, uword divider, uword bias){
+  if (divider > 0)
+    top = original.subvec(0, divider-1);
+  if (divider < original.n_rows)
+    bottom = original.subvec(divider, original.n_rows-1) - bias;
+}
+
 /* search for the element index for which
   v(index - 1) < target && v(index) >= target
   obviously assumes that the vector is sorted 
   in ascending order */
 template<typename T, template <typename> class ARMA_VECTOR_TYPE>
 uword binarySearch(const ARMA_VECTOR_TYPE<T> &v, const uword target){
-  uword start = 0;
+  /*uword start = 0;
   uword end = v.n_rows - 1;
   while (true){
     uword mid = (start + end) / 2;
     if (end <= start) return mid;
     if (mid > 0 && v[mid - 1] < target && v[mid] >= target)
-      return mid;        
+      return mid;
+    if (mid == 0 && v[mid] >= target)
+      return mid;
+    if (mid == v.n_rows - 1 && v[mid] < target)
+      return v.n_rows; 
     if (v[mid] < target)
       start = mid + 1;
     else
       end = mid - 1;
+  }*/
+  uword i;
+  for (i = 0; i < v.n_rows; i++){
+    if (v[i] >= target)
+      break;
   }
+  return i;
 }

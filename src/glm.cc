@@ -14,7 +14,7 @@ double GLM::clamp(double val){
 
 double GLM::maxLambda(){
   assert(eta > 0);
-  return 0.9 * norm(g_start, "inf") / eta;
+  return norm(g_start, "inf") / eta;
 }
 
 /* evlaute the elastic net function value for a given
