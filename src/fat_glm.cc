@@ -79,6 +79,7 @@ void FatGLM::solve(colvec &z, double lambda, size_t max_iterations){
     
     findActiveSet(g, z, A);    
     if (A.n_rows == 0) break;
+    
     if (A.n_rows == A_prev.n_rows && accu(A == A_prev) == A.n_rows){
       cg_solver.solve(x1, x2, g_A, delz_A, multiplier, false);
     }
@@ -108,5 +109,5 @@ void FatGLM::solve(colvec &z, double lambda, size_t max_iterations){
       break;
     projectAndSparsify(w, u, l);
   }
-  cout << "Iterations required: " << i << endl;
+  //cout << "Iterations required: " << i << endl;
 }
