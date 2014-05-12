@@ -70,14 +70,14 @@ double crossValidate(const mat &X,
 }
 
 /* calculate regularization path */
-std::map<double, double>
+void 
 regularizationPath(const mat &X,
                     const colvec &y,
                     colvec &z,
+                    std::map<double, double> errors,
                     double eta,
                     size_t max_iterations){
 
-  std::map<double, double> map;
 //  wall_clock timer;
 //  timer.tic();
 
@@ -87,11 +87,10 @@ regularizationPath(const mat &X,
   while (lambda > .01 * max_lambda){
     g->solve(z, lambda, max_iterations);
     double error = GLM::evaluate(X, y, z, lambda, eta);
-    map[lambda] = error;
+    errors[lambda] = error;
     lambda *= 0.9545;
   }
 //  double time = timer.toc();
 //  std::cout << "runtime: " << time << std::endl;
   delete g;
-  return map;
 }

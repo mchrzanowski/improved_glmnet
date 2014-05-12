@@ -19,9 +19,10 @@ crossValidate(const mat &X,
               double split_ratio,
               size_t max_iterations);
 
-std::map<double, double>
+void
 regularizationPath(const mat &X,
                     const colvec &y,
                     colvec &z,
+                    std::map<double, double> errors,
                     double eta,
                     size_t max_iterations);

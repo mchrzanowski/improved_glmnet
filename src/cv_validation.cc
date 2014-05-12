@@ -34,6 +34,6 @@ int main(int argc, char **argv){
   cout << "Eta: " << eta << endl
     << "Max Iters: " << iterations << endl;
 
-  regularizationPath(A, b, z, eta, iterations);
+  crossValidate(A, b, z, eta, 0.8, iterations);
 
 }
