@@ -4,10 +4,8 @@ CXX = g++
 RM = rm -f
 
 # flags
-CXXFLAGS = -g -std=c++0x -march=native -Wall -O4 -I/usr/include \
-	-I/usr/local/include -L/usr/local/lib -L/opt/intel/lib/intel64 \
-	-L/opt/intel/mkl/lib/intel64
-LDFLAGS = -larmadillo -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5
+CXXFLAGS = -std=c++0x -march=native -Wall -O4 -I/opt/OpenBLAS/include -L/opt/OpenBLAS/lib
+LDFLAGS = -lopenblas -larmadillo
 
 # In this section, you list the files that are part of the project.
 # If you add/change names of header/source files, here is where you
@@ -22,9 +20,7 @@ MATLAB = matlab_validation.out
 CV = cv_validation.out
 
 default: $(TARGETS)
-
 matlab: $(MATLAB)
-
 cv: $(CV)
 
 cv_validation.out: $(OBJECTS) cv_validation.cc
@@ -45,14 +41,13 @@ Makefile.dependencies:: $(SOURCES) $(HEADERS)
 	$(CXX) $(CXXFLAGS) -MM $(SOURCES) > Makefile.dependencies
 
 -include Makefile.dependencies
-
 # Phony means not a "real" target, it doesn't build anything
 # The phony target "clean" is used to remove all compiled object files.
 # The phony target "spartan" is used to remove all compiled object and backup files.
 .PHONY: clean spartan
 
 clean:
-	$(RM) $(TARGETS) $(OBJECTS) $(TESTS) Makefile.dependencies
+	$(RM) $(TARGETS) $(MATLAB) $(CV) $(OBJECTS) Makefile.dependencies
 
 spartan: clean
 	$(RM) *~
