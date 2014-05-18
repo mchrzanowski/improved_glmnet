@@ -1,13 +1,72 @@
 #include "skinny_cg.h"
 #include "skinny_utils.h"
 
-void SkinnyCG::solve(const mat &x1, const mat &x2, const mat &x4,
+/* solve a special case where only 
+  one of the matrices passed to the solve function
+  is non-empty. */
+void SkinnyCG::subsolve(const mat &A, 
+          const vec &b,
+          vec &x,
+          bool restart,
+          size_t iterations){
+
+  if (restart) {
+    skinnyMultiply(A, x, r_top);
+    r_top -= b;
+    p_top = -r_top;
+    prev_r_sq_sum = dot(r_top, r_top);
+  }
+
+  for (size_t i = 0; i < iterations && prev_r_sq_sum > RESIDUAL_TOL; i++){
+    colvec Ap_top(p_top.n_rows);
+    skinnyMultiply(A, p_top, Ap_top);
+
+    const double alpha = prev_r_sq_sum / dot(p_top, Ap_top);
+
+    x += alpha * p_top;    
+    r_top += alpha * Ap_top;
+    
+    const double r_sq_sum = dot(r_top, r_top);
+    const double beta = r_sq_sum / prev_r_sq_sum;
+
+    p_top *= beta;
+    p_top -= r_top;
+    prev_r_sq_sum = r_sq_sum;
+  }
+
+}
+
+/* perform conjugate gradient descent */
+void SkinnyCG::solve(const mat &A1, const mat &A2, const mat &A4,
                       const vec &b,
                       vec &x,
                       bool restart,
                       size_t iterations){
 
-  const uword half = x1.n_cols;
+  const uword half = A1.n_cols;
+  /* two special cases when one of A1 or A4 are empty.*/
+  if (A1.n_rows == 0 || A1.n_cols == 0){
+    vec x_bottom = x.subvec(half, x.n_rows-1).unsafe_col(0); 
+    colvec b_bottom = b.subvec(half, x.n_rows-1).unsafe_col(0);
+    subsolve(A4, b_bottom, x_bottom, restart, iterations);
+  }
+  else if (A4.n_rows == 0 || A4.n_cols == 0){
+    vec x_top = x.subvec(0, half-1).unsafe_col(0);
+    const vec b_top = b.subvec(0, half-1).unsafe_col(0);
+    subsolve(A1, b_top, x_top, restart, iterations);
+  }
+  else {
+    fullSolve(A1, A2, A4, b, x, restart, iterations);
+  }
+}
+
+void SkinnyCG::fullSolve(const mat &A1, const mat &A2, const mat &A4,
+                          const vec &b,
+                          vec &x,
+                          bool restart,
+                          size_t iterations){
+
+  const uword half = A1.n_cols;
 
   vec x_top = x.subvec(0, half-1).unsafe_col(0);
   vec x_bottom = x.subvec(half, x.n_rows-1).unsafe_col(0);
@@ -16,7 +75,7 @@ void SkinnyCG::solve(const mat &x1, const mat &x2, const mat &x4,
   const vec b_bottom = b.subvec(half, x.n_rows-1).unsafe_col(0);
 
   if (restart) {
-    skinnyMultiply(x1, x2, x4, x_top, x_bottom, r_top, r_bottom);
+    skinnyMultiply(A1, A2, A4, x_top, x_bottom, r_top, r_bottom);
     r_top -= b_top;
     r_bottom -= b_bottom;
     p_top = -r_top;
@@ -26,7 +85,7 @@ void SkinnyCG::solve(const mat &x1, const mat &x2, const mat &x4,
 
   for (size_t i = 0; i < iterations && prev_r_sq_sum > RESIDUAL_TOL; i++){
     colvec Ap_top, Ap_bottom;
-    skinnyMultiply(x1, x2, x4, p_top, p_bottom, Ap_top, Ap_bottom);
+    skinnyMultiply(A1, A2, A4, p_top, p_bottom, Ap_top, Ap_bottom);
 
     const double alpha = prev_r_sq_sum / 
       (dot(p_top, Ap_top) + dot(p_bottom, Ap_bottom));

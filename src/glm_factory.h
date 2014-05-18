@@ -23,6 +23,6 @@ void
 regularizationPath(const mat &X,
                     const colvec &y,
                     colvec &z,
-                    std::map<double, double> errors,
+                    std::map<double, double> &errors,
                     double eta,
                     size_t max_iterations);

@@ -34,7 +34,6 @@ void FatCG::subsolve(const mat &X,
     p_top -= r_top;
     prev_r_sq_sum = r_sq_sum;
   }
-
 }
 
 void FatCG::solve(const mat &x1, 
@@ -47,20 +46,32 @@ void FatCG::solve(const mat &x1,
 
   const uword half = x1.n_cols;
 
-  /* two special cases when one of x1 or x2 are empty.
-  as opposed to polluting the below code with lots of if
-  statements to guard against either one being empty,
-  just call this other method that only assumes one is nonempty*/
+  /* two special cases when one of x1 or x2 are empty
+  that have to be special-cased, unfortunately. */
   if (x1.n_rows == 0 || x1.n_cols == 0){
     vec x_bottom = x.subvec(half, x.n_rows-1).unsafe_col(0);
     colvec b_bottom = b.subvec(half, x.n_rows-1).unsafe_col(0);
-    return subsolve(x2, b_bottom, x_bottom, multiplier, restart, iterations);
+    subsolve(x2, b_bottom, x_bottom, multiplier, restart, iterations);
   }
   else if (x2.n_rows == 0 || x2.n_cols == 0){
     vec x_top = x.subvec(0, half-1).unsafe_col(0);
     const vec b_top = b.subvec(0, half-1).unsafe_col(0);
-    return subsolve(x1, b_top, x_top, multiplier, restart, iterations);
+    subsolve(x1, b_top, x_top, multiplier, restart, iterations);
   }
+  else {
+    fullSolve(x1, x2, b, x, multiplier, restart, iterations);
+  }
+}
+
+void FatCG::fullSolve(const mat &x1, 
+                      const mat &x2,
+                      const vec &b,
+                      vec &x,
+                      double multiplier,
+                      bool restart,
+                      size_t iterations){
+
+  const uword half = x1.n_cols;
 
   vec x_top = x.subvec(0, half-1).unsafe_col(0);
   vec x_bottom = x.subvec(half, x.n_rows-1).unsafe_col(0);
@@ -104,5 +115,4 @@ void FatCG::solve(const mat &x1,
     
     prev_r_sq_sum = r_sq_sum;
   }
-
 }

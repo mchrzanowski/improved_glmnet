@@ -18,18 +18,19 @@ void SkinnyGLM::createMatrixChunks(mat &x1, mat &x2, mat &x4,
                                     const uvec &A, const uvec &A_prev,
                                     double multiplier){
   
-  const uword divider = binarySearch(A, n_half);
-  const uvec A_top = A.subvec(0, divider - 1);
-  const uvec A_bottom = A.subvec(divider, A.n_rows-1) - n_half;
+  // get the index of A that is at the boundary of the top
+  // n elements and the bottom ones.
+  uword divider = binarySearch(A, n_half);
+  uvec A_top, A_bottom;
+  cutVector(A_top, A_bottom, A, divider, n_half);
 
   // maybe I can get away with not needing to re-create
   // some of the matrices. this happens if A_top or A_bottom haven't changed
   // from the previous iteration.
   if (A_prev.n_rows > 0){
     uword A_prev_divider = binarySearch(A_prev, n_half);
-    const uvec A_prev_top = A_prev.subvec(0, A_prev_divider-1);
-    const uvec A_prev_bottom = A_prev.subvec(A_prev_divider, 
-                                              A_prev.n_rows-1) - n_half;
+    uvec A_prev_top, A_prev_bottom;
+    cutVector(A_prev_top, A_prev_bottom, A_prev, A_prev_divider, n_half);
 
     bool changed = false;
     // too bad, the active set for the top n variables changed.
@@ -55,6 +56,7 @@ void SkinnyGLM::createMatrixChunks(mat &x1, mat &x2, mat &x4,
     }
 
   }
+  // recreate all matrices.
   else {
     x1 = XX(A_top, A_top);
     x1.diag() += multiplier;
@@ -93,6 +95,9 @@ void SkinnyGLM::solve(colvec &z, double lambda, size_t max_iterations){
     findActiveSet(g, z, A);
     if (A.n_rows == 0) break;
 
+    // if the active set hasn't changed since the prev iteration,
+    // then we can take a few more CG steps in this direction
+    // and don't have to re-create the matrix chunks.
     if (A.n_rows == A_prev.n_rows && accu(A == A_prev) == A.n_rows){
         cg_solver.solve(x1, x2, x4, g_A, delz_A, false);
     }
@@ -113,9 +118,9 @@ void SkinnyGLM::solve(colvec &z, double lambda, size_t max_iterations){
     // that as part of the gradient.
     const colvec K_z_A = -g_A - g_start_with_multi_A;
 
-    const colvec delz_A_top = delz_A.subvec(0, divider - 1).unsafe_col(0);
-    const colvec delz_A_bottom = delz_A.subvec(divider,
-                                                delz_A.n_rows-1).unsafe_col(0);
+    colvec delz_A_top, delz_A_bottom;
+    cutVector(delz_A_top, delz_A_bottom, delz_A, divider, 0);
+
     colvec K_u_A(A.n_rows);
     skinnyMultiply(x1, x2, x4, delz_A_top, delz_A_bottom, K_u_A);
 
@@ -123,6 +128,5 @@ void SkinnyGLM::solve(colvec &z, double lambda, size_t max_iterations){
       break;
     projectAndSparsify(w, u, l);
   }
-
-  cout << "Iterations required: " << i << endl;
+  //cout << "Iterations required: " << i << endl;
 }

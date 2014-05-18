@@ -7,17 +7,19 @@ using namespace arma;
 
 GLM::GLM(double eta) : eta(eta) {}
 
-/* project to non-negative orphant */
+/* project to non-negative orthant */
 double GLM::clamp(double val){
   return std::max(val, 0.);
 }
 
+/* get lambda_max, which is important in
+the regularization path calculation. */
 double GLM::maxLambda(){
   assert(eta > 0);
   return norm(g_start, "inf") / eta;
 }
 
-/* evlaute the elastic net function value for a given
+/* evaluate the elastic net function value for a given
   problem instance */
 double GLM::evaluate(const mat &X, const colvec &y, const colvec &z,
                       double lambda, double eta){
@@ -48,8 +50,9 @@ bool GLM::update(colvec &z, const uvec &A, const colvec &delz_A,
   return true;
 }
 
-/* project vector to non-negative orphant.
-then figure out whether i or n_half + i can be nonzero. */
+/* project vector to non-negative orthant.
+then figure out whether i or n_half + i can be nonzero.
+sparsification is really, really useful for speeding up convergence. */
 void GLM::projectAndSparsify(colvec &w, colvec &u, colvec &l){
   u.transform(clamp);
   l.transform(clamp);
@@ -77,14 +80,17 @@ double GLM::aggressiveStep(const uvec &A, const vec &eta,
                         { return p * alpha + q; };
   colvec z_A = z(A);
 
-  // find all indices for which, after a full step size,
-  // we're nonpositive.
-  uvec D = find(delz_A + z_A <= 0);
+  // our knots are all active indices for which, after a full step size,
+  // the values are non-positive. that is, we could in theory
+  // clamp these points in this iteration.
+  uvec knots = find(delz_A + z_A <= 0);
 
   // FAILURE.
-  if (D.n_rows == 0) return 0;
+  if (knots.n_rows == 0) return 0;
 
-  const vec alphas = -z_A(D) / delz_A(D);
+  /* as in conservativeStep, the step size that
+  clamps index i (which is a knot) is z_i / delz_i. */
+  const vec alphas = -z_A(knots) / delz_A(knots);
   const uvec sorted_indices = sort_index(alphas);
 
   double pi = 0, omega = 0, sigma = 0, c = 0;
@@ -95,10 +101,10 @@ double GLM::aggressiveStep(const uvec &A, const vec &eta,
     double alpha_i = alphas[indx];
     if (alpha_i > 1) break;
 
-    double mu_i = delz_A[D[indx]];
-    double Ku_i = Ku[D[indx]];
-    double Kz_i = Kz[D[indx]];
-    double eta_i = eta[D[indx]];
+    double mu_i = delz_A[knots[indx]];
+    double Ku_i = Ku[knots[indx]];
+    double Kz_i = Kz[knots[indx]];
+    double eta_i = eta[knots[indx]];
 
     pi -= 2 * mu_i * Ku_i;
     omega += -mu_i * (Kz_i + eta_i) + alpha_i * mu_i * Ku_i;
@@ -124,21 +130,27 @@ double GLM::aggressiveStep(const uvec &A, const vec &eta,
   return 1;
 }
 
-/* Bertsekas[82] shows the first knot is always a safe step size (if
-there is still any work to do) */
+/* Let "knots" be the indices of the active set for which the gradient is
+negative and whose values are positive, is always a safe step size (if
+there is still any work to do). That is, these are the indices for which we
+can make progress in this iteration. We note that clamping index i (which we
+assume is a knot point) means setting alpha to be z_i / delz_i. According to
+Bertsekas[82], we can *always* select the smallest step size, hence clamping
+the corresponding value for that chosen index. */
 double GLM::conservativeStep(const uvec &A, colvec &z, const colvec &delz_A){
 
   colvec z_A = z(A);
   const uvec neg_gradient = find(delz_A < 0);
   const uvec pos_z = find(z_A > 0);
 
-  uvec D;
-  vintersection(neg_gradient, pos_z, D);
+  uvec knots;
+  vintersection(neg_gradient, pos_z, knots);
 
   // there is absolutely no work left to do. FAILURE.
-  if (D.n_rows == 0) return 0;
+  if (knots.n_rows == 0) return 0;
 
-  const vec alphas = z_A(D) / delz_A(D);
+  // alphas are the step lengths required to clamp the values at the knots.
+  const vec alphas = z_A(knots) / delz_A(knots);
   double alpha = std::min(-max(alphas), 1.0);
   assert(alpha > 0);
 

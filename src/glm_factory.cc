@@ -45,8 +45,6 @@ double crossValidate(const mat &X,
   const mat X_test = X.rows(permute.subvec(last_tr_sample, permute.n_rows-1));
   const colvec y_test = y(permute.subvec(last_tr_sample, permute.n_rows-1));
 
-//  wall_clock timer;
-//  timer.tic();
   GLM *g = makeGLM(X_train, y_train, eta);
   double best_lambda = -1;
   double best_error = std::numeric_limits<double>::max();
@@ -63,8 +61,6 @@ double crossValidate(const mat &X,
     }
     lambda *= 0.9545;
   }
-//  double time = timer.toc();
-//  std::cout << "Runtime: " << time << " seconds." << std::endl;
   delete g;
   return best_lambda;
 }
@@ -74,12 +70,12 @@ void
 regularizationPath(const mat &X,
                     const colvec &y,
                     colvec &z,
-                    std::map<double, double> errors,
+                    std::map<double, double> &errors,
                     double eta,
                     size_t max_iterations){
 
-//  wall_clock timer;
-//  timer.tic();
+  wall_clock timer;
+  timer.tic();
 
   GLM *g = makeGLM(X, y, eta);
   double max_lambda = g->maxLambda();
@@ -90,7 +86,7 @@ regularizationPath(const mat &X,
     errors[lambda] = error;
     lambda *= 0.9545;
   }
-//  double time = timer.toc();
-//  std::cout << "runtime: " << time << std::endl;
+  double time = timer.toc();
+  std::cout << "runtime: " << time << std::endl;
   delete g;
 }

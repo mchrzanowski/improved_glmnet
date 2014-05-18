@@ -80,6 +80,9 @@ void FatGLM::solve(colvec &z, double lambda, size_t max_iterations){
     findActiveSet(g, z, A);    
     if (A.n_rows == 0) break;
     
+    // if the active set hasn't changed since the prev iteration,
+    // then we can take a few more CG steps in this direction
+    // and don't have to re-create the matrix chunks.
     if (A.n_rows == A_prev.n_rows && accu(A == A_prev) == A.n_rows){
       cg_solver.solve(x1, x2, g_A, delz_A, multiplier, false);
     }
@@ -93,12 +96,12 @@ void FatGLM::solve(colvec &z, double lambda, size_t max_iterations){
       A_prev = A;
     }
     if (norm(g_A, 2) <= G_A_TOL) break;
-    const uword divider = x1.n_cols;
 
     // we need K * z. but we actually calculated
     // that as part of the gradient.
     const colvec K_z_A = -g_A - g_start_with_multi_A;
 
+    const uword divider = x1.n_cols;
     colvec delz_A_top, delz_A_bottom;
     cutVector(delz_A_top, delz_A_bottom, delz_A, divider, 0);
 

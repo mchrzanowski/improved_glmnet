@@ -23,13 +23,9 @@ void TestGLM::solve(colvec &z, double lambda, size_t max_iterations){
   assert(lambda > 0);
 
   CG cg_solver;
-
   mat K_A;
-
   size_t i;
-
   uvec A, A_prev;
-
   colvec delz_A, g_A;
 
   const mat XX_I = XX + speye(XX.n_rows, XX.n_cols) * lambda * (1 - eta);
