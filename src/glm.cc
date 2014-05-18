@@ -158,9 +158,9 @@ double GLM::conservativeStep(const uvec &A, colvec &z, const colvec &delz_A){
 }
 
 /* find the active set, given the gradient g and the elements of z.
-this means look for all elements which have a nonpositive gradient
+this means look for all elements which have a nonpositive gradient component
 or are strictly positive. this basically means that these are the
-indices that we can work on in this iteration. */
+indices that we can work on trying to decrease in this iteration. */
 void GLM::findActiveSet(const colvec &g, const colvec &z, uvec &A){
   const uvec nonpos_g = find(g <= 0);
   const uvec pos_z = find(z > 0);
