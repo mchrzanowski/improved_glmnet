@@ -2,9 +2,10 @@
 
 CXX = g++
 RM = rm -f
+OpenBLAS_DIR = /opt/OpenBLAS
 
 # flags
-CXXFLAGS = -std=c++0x -march=native -Wall -O4 -I/opt/OpenBLAS/include -L/opt/OpenBLAS/lib
+CXXFLAGS = -std=c++0x -march=native -Wall -O4 -I$(OpenBLAS_DIR)/include -L$(OpenBLAS_DIR)/lib
 LDFLAGS = -lopenblas -larmadillo
 
 # In this section, you list the files that are part of the project.
