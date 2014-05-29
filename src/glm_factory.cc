@@ -6,10 +6,11 @@
 /* create a GLM solver instance.
   pick one based on whether the input data matrix 
   is skinny, fat, or whether we should use the basic solver */
-GLM* makeGLM(const mat &X,
-              const vec &y,
-              double eta,
-              bool unoptimized_solver){
+GLM*
+makeGLM(const mat &X,
+        const vec &y,
+        double eta,
+        bool unoptimized_solver){
   if (unoptimized_solver){
     std::cout << "Using TestGLM solver." << std::endl;
     return new TestGLM(X, y, eta);
@@ -29,12 +30,13 @@ GLM* makeGLM(const mat &X,
   training/validation splitting, and problem data,
   and return the lambda that has the best error
   on the validation set */
-double crossValidate(const mat &X,
-                      const colvec &y,
-                      colvec &z,
-                      double eta,
-                      double split_ratio,
-                      size_t max_iterations){
+double
+crossValidate(const mat &X,
+              const colvec &y,
+              colvec &z,
+              double eta,
+              double split_ratio,
+              size_t max_iterations){
   // permute data.
   uvec permute = shuffle(linspace<uvec>(0, X.n_rows-1, X.n_rows));
   uword last_tr_sample = split_ratio * X.n_rows;
@@ -52,21 +54,21 @@ double crossValidate(const mat &X,
   // get initial lambda
   double max_lambda = g->maxLambda();
   double lambda = max_lambda;
-  while (lambda > .01 * max_lambda){
+  for (unsigned i = 0; i < 100; i++){
     g->solve(z, lambda, max_iterations);
     double error = GLM::evaluate(X_test, y_test, z, lambda, eta);
     if (error < best_error){
       best_lambda = lambda;
       best_error = error;
     }
-    lambda *= 0.9545;
+    lambda *= 0.9545486;
   }
   delete g;
   return best_lambda;
 }
 
 /* calculate regularization path */
-void 
+void
 regularizationPath(const mat &X,
                     const colvec &y,
                     colvec &z,
@@ -80,11 +82,11 @@ regularizationPath(const mat &X,
   GLM *g = makeGLM(X, y, eta);
   double max_lambda = g->maxLambda();
   double lambda = max_lambda;
-  while (lambda > .01 * max_lambda){
+  for (unsigned i = 0; i < 100; i++){
     g->solve(z, lambda, max_iterations);
     double error = GLM::evaluate(X, y, z, lambda, eta);
     errors[lambda] = error;
-    lambda *= 0.9545;
+    lambda *= 0.9545486;
   }
   double time = timer.toc();
   std::cout << "runtime: " << time << std::endl;

@@ -5,11 +5,10 @@
   one of the matrices passed to the solve function
   is non-empty. */
 void SkinnyCG::subsolve(const mat &A, 
-          const vec &b,
-          vec &x,
-          bool restart,
-          size_t iterations){
-
+                        const vec &b,
+                        vec &x,
+                        bool restart,
+                        size_t iterations){
   if (restart) {
     skinnyMultiply(A, x, r_top);
     r_top -= b;
@@ -68,6 +67,7 @@ void SkinnyCG::fullSolve(const mat &A1, const mat &A2, const mat &A4,
 
   const uword half = A1.n_cols;
 
+  /* we deal with halves, so split b and x up */
   vec x_top = x.subvec(0, half-1).unsafe_col(0);
   vec x_bottom = x.subvec(half, x.n_rows-1).unsafe_col(0);
 

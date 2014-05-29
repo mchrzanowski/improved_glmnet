@@ -21,6 +21,9 @@ TestGLM::TestGLM(const mat &X, const vec &y, double eta) :
 void TestGLM::solve(colvec &z, double lambda, size_t max_iterations){
 
   assert(lambda > 0);
+  if (max_iterations == 0){
+    max_iterations = z.n_rows;
+  }
 
   CG cg_solver;
   mat K_A;

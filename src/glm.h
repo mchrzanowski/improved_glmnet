@@ -13,7 +13,7 @@ public:
 
   virtual void solve(colvec &z,
                       double lambda, 
-                      size_t max_iterations) = 0;
+                      size_t max_iterations=0) = 0;
 
   double maxLambda();
 

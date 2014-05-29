@@ -10,7 +10,7 @@ public:
   TestGLM(const arma::mat &X, const arma::vec &y, const double eta);
   
   void solve(arma::colvec &z, const double lambda, 
-              const size_t max_iterations);
+              const size_t max_iterations=0);
 
 private:
   arma::mat XX, K;

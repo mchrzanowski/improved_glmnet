@@ -58,6 +58,10 @@ void FatGLM::createMatrixChunks(mat &x1, mat &x2,
 void FatGLM::solve(colvec &z, double lambda, size_t max_iterations){
 
   assert(lambda > 0);
+  if (max_iterations == 0){
+    max_iterations = z.n_rows;
+  }
+
   const double multiplier = lambda * eta;
   const colvec g_start_with_multi = g_start + multiplier;
 
