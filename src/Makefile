@@ -20,9 +20,9 @@ TARGETS = glmnet.out
 CVX = cvx_validation.out
 CV = cv_validation.out
 
-default: $(TARGETS)
-matlab: $(CVX)
 cv: $(CV)
+cvx: $(CVX)
+default: $(TARGETS)
 
 cv_validation.out: $(OBJECTS) cv_validation.cc
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
