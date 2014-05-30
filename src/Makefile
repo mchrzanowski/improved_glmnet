@@ -17,20 +17,20 @@ HEADERS = $(SOURCES:.cc=.h) utils.h
 OBJECTS = $(SOURCES:.cc=.o)
 
 TARGETS = glmnet.out
-MATLAB = matlab_validation.out
+CVX = cvx_validation.out
 CV = cv_validation.out
 
 default: $(TARGETS)
-matlab: $(MATLAB)
+matlab: $(CVX)
 cv: $(CV)
 
 cv_validation.out: $(OBJECTS) cv_validation.cc
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
-glmnet.out: $(OBJECTS) main.cc
+cvx_validation.out: $(OBJECTS) cvx_validation.cc
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
-matlab_validation.out: $(OBJECTS) matlab_validation.cc
+glmnet.out: $(OBJECTS) main.cc
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
 # In make's default rules, a .o automatically depends on its .cc file
@@ -48,7 +48,7 @@ Makefile.dependencies:: $(SOURCES) $(HEADERS)
 .PHONY: clean spartan
 
 clean:
-	$(RM) $(TARGETS) $(MATLAB) $(CV) $(OBJECTS) Makefile.dependencies
+	$(RM) $(TARGETS) $(CVX) $(CV) $(OBJECTS) Makefile.dependencies
 
 spartan: clean
 	$(RM) *~

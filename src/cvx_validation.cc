@@ -21,7 +21,10 @@ static void run(GLM *g, const mat &A, const colvec &b, colvec &z,
 }
 
 /*
-MATLAB verifier
+CVX  verifier.
+Will solve the elastic net optimization problem for a given A, b, z, eta, and
+lambda value. You should then solve the problem in CVX and make sure the
+optimal values are close to each other.
 argc is expected to be 7.
 argv[1] = lambda
 argv[2] = eta
