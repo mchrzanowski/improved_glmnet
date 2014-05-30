@@ -10,7 +10,7 @@ static void run(GLM *g, const mat &A, const colvec &b, colvec &z,
                 double eta){
 
   // pick a reasonable lambda, defined
-  // as half of the lambda value for which z^\star ~ 0.
+  // as quarter of the lambda value for which z^\star ~ 0.
   double lambda = 0.25 * g->maxLambda();
 
   cout << A.n_rows << "x" << A.n_cols 
