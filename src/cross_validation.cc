@@ -6,8 +6,9 @@
 using namespace std;
 using namespace arma;
 
-/*
-argc is expected to be 7.
+/* Perform cross validation to find a lambda with 
+excellent generalization performance on a given dataset.
+argc is expected to be 5.
 argv[1] = eta
 argv[2] = location of A matrix
 argv[3] = location of b vector
@@ -37,7 +38,7 @@ int main(int argc, char **argv){
   
   double time = timer.toc();
   std::cout << "Runtime: " << time << std::endl;
-  cout << "Best lambda: " << cv_lambda << endl;
+  cout << "Chosen lambda: " << cv_lambda << endl;
 
   return 0;
 }

@@ -7,7 +7,7 @@ using namespace arma;
 using namespace std;
 
 /* Regularization path generation.
-argc is expected to be 7.
+argc is expected to be 5.
 argv[1] = eta
 argv[2] = location of A matrix
 argv[3] = location of b vector

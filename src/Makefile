@@ -17,15 +17,14 @@ SOURCES = cg.cc glm.cc skinny_glm.cc fat_glm.cc test_glm.cc \
 HEADERS = $(SOURCES:.cc=.h) utils.h
 OBJECTS = $(SOURCES:.cc=.o)
 
-TARGETS = glmnet.out
 CVX = cvx_validation.out
 CV = cross_validation.out
 RP = regularization_path.out
 
 cv: $(CV)
 cvx: $(CVX)
-examples: $(CV) $(CVX) $(RP)
-default: $(TARGETS)
+default: $(CV) $(CVX) $(RP)
+rp: $(RP)
 
 cross_validation.out: $(OBJECTS) cross_validation.cc
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
