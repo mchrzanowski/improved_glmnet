@@ -25,14 +25,19 @@ int main(int argc, char **argv){
   b.load(argv[3], csv_ascii);
   z.load(argv[4], csv_ascii);
 
-  cout << A.n_rows << "x" << A.n_cols 
-    << "\t" << b.n_rows << "\t" 
-    << z.n_rows << endl;
-
+  cout << "A Size: " << A.n_rows << " x " << A.n_cols << endl;
+  cout << "b Size: " << b.n_rows << endl;
+  cout << "z Size: " << z.n_rows << endl;
   cout << "Eta: " << eta << endl;
-  
-  //crossValidate(A, b, z, eta, 0.8);
-  std::map<double, double> map;
-  regularizationPath(A, b, z, map, eta);
 
+  wall_clock timer;
+  timer.tic();
+
+  double cv_lambda = crossValidate(A, b, z, eta, 0.8);
+  
+  double time = timer.toc();
+  std::cout << "Runtime: " << time << std::endl;
+  cout << "Best lambda: " << cv_lambda << endl;
+
+  return 0;
 }

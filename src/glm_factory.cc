@@ -76,9 +76,6 @@ regularizationPath(const mat &X,
                     double eta,
                     size_t max_iterations){
 
-  wall_clock timer;
-  timer.tic();
-
   GLM *g = makeGLM(X, y, eta);
   double max_lambda = g->maxLambda();
   double lambda = max_lambda;
@@ -88,7 +85,5 @@ regularizationPath(const mat &X,
     errors[lambda] = error;
     lambda *= 0.9545486;
   }
-  double time = timer.toc();
-  std::cout << "runtime: " << time << std::endl;
   delete g;
 }

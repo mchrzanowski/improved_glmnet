@@ -6,30 +6,6 @@
 using namespace std;
 using namespace arma;
 
-static void run(GLM *g, const mat &A, const colvec &b, colvec &z,
-                double eta){
-
-  // pick a reasonable lambda, defined
-  // as quarter of the lambda value for which z^\star ~ 0.
-  double lambda = 0.25 * g->maxLambda();
-
-  cout << A.n_rows << "x" << A.n_cols 
-    << "\t" << b.n_rows << "\t" 
-    << z.n_rows << endl;
-
-  cout << "Lambda: " << lambda << endl;
-  cout << "Eta: " << eta << endl;
-
-  wall_clock timer;
-  timer.tic();
-  g->solve(z, lambda);
-  double time = timer.toc();
-  double error = GLM::evaluate(A, b, z, lambda, eta);
-
-  cout << "Error: " << error << endl;
-  cout << "Runtime: " << time << " seconds. " << endl;
-}
-
 /*
 CVX  verifier.
 Will solve the elastic net optimization problem for a given A, b, z, and eta.
@@ -58,8 +34,29 @@ int main(int argc, char **argv){
   b.load(argv[3], csv_ascii);
   z.load(argv[4], csv_ascii);
 
+  cout << "A Size: " << A.n_rows << " x " << A.n_cols << endl;
+  cout << "b Size: " << b.n_rows << endl;
+  cout << "z Size: " << z.n_rows << endl;
+  cout << "Eta: " << eta << endl;
+
   GLM *g = makeGLM(A, b, eta, use_stupid_solver);
-  run(g, A, b, z, eta);
+  
+  // pick a reasonable lambda.
+  double lambda = 0.25 * g->maxLambda();
+  
+  cout << "Lambda: " << lambda << endl;
+
+  wall_clock timer;
+  timer.tic();
+  
+  g->solve(z, lambda);
+  
+  double time = timer.toc();
+  double error = GLM::evaluate(A, b, z, lambda, eta);
+
+  cout << "Error: " << error << endl;
+  cout << "Runtime: " << time << " seconds. " << endl;
 
   delete g; 
+  return 0;
 }

@@ -5,7 +5,8 @@ RM = rm -f
 OpenBLAS_DIR = /opt/OpenBLAS
 
 # flags
-CXXFLAGS = -std=c++0x -march=native -Wall -O4 -I$(OpenBLAS_DIR)/include -L$(OpenBLAS_DIR)/lib
+CXXFLAGS = -std=c++0x -march=native -Wall -O4 -I$(OpenBLAS_DIR)/include \
+						-L$(OpenBLAS_DIR)/lib
 LDFLAGS = -lopenblas -larmadillo
 
 # In this section, you list the files that are part of the project.
@@ -18,19 +19,21 @@ OBJECTS = $(SOURCES:.cc=.o)
 
 TARGETS = glmnet.out
 CVX = cvx_validation.out
-CV = cv_validation.out
+CV = cross_validation.out
+RP = regularization_path.out
 
 cv: $(CV)
 cvx: $(CVX)
+examples: $(CV) $(CVX) $(RP)
 default: $(TARGETS)
 
-cv_validation.out: $(OBJECTS) cv_validation.cc
+cross_validation.out: $(OBJECTS) cross_validation.cc
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
 cvx_validation.out: $(OBJECTS) cvx_validation.cc
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
-glmnet.out: $(OBJECTS) main.cc
+regularization_path.out: $(OBJECTS) regularization_path.cc
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
 # In make's default rules, a .o automatically depends on its .cc file
