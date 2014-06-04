@@ -28,7 +28,7 @@ makeGLM(const mat &X,
 /* perform cross validation, where we 
   take in a list of lambda values, a ratio for
   training/validation splitting, and problem data,
-  and return the lambda that has the best error
+  and return the lambda that has the best value
   on the validation set */
 double
 crossValidate(const mat &X,
@@ -49,17 +49,17 @@ crossValidate(const mat &X,
 
   GLM *g = makeGLM(X_train, y_train, eta);
   double best_lambda = -1;
-  double best_error = std::numeric_limits<double>::max();
+  double best_val = std::numeric_limits<double>::max();
 
   // get initial lambda
   double max_lambda = g->maxLambda();
   double lambda = max_lambda;
   for (unsigned i = 0; i < 100; i++){
     g->solve(z, lambda, max_iterations);
-    double error = GLM::evaluate(X_test, y_test, z, lambda, eta);
-    if (error < best_error){
+    double val = GLM::evaluate(X_test, y_test, z, lambda, eta);
+    if (val < best_val){
       best_lambda = lambda;
-      best_error = error;
+      best_val = val;
     }
     lambda *= 0.9545486;
   }
@@ -72,7 +72,7 @@ void
 regularizationPath(const mat &X,
                     const colvec &y,
                     colvec &z,
-                    std::map<double, double> &errors,
+                    std::map<double, double> &lambda_to_optval,
                     double eta,
                     size_t max_iterations){
 
@@ -81,8 +81,8 @@ regularizationPath(const mat &X,
   double lambda = max_lambda;
   for (unsigned i = 0; i < 100; i++){
     g->solve(z, lambda, max_iterations);
-    double error = GLM::evaluate(X, y, z, lambda, eta);
-    errors[lambda] = error;
+    double value = GLM::evaluate(X, y, z, lambda, eta);
+    lambda_to_optval[lambda] = value;
     lambda *= 0.9545486;
   }
   delete g;

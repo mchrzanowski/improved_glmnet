@@ -49,9 +49,9 @@ int main(int argc, char **argv){
   g->solve(z, lambda);
   
   double time = timer.toc();
-  double error = GLM::evaluate(A, b, z, lambda, eta);
+  double optval = GLM::evaluate(A, b, z, lambda, eta);
 
-  cout << "Error: " << error << endl;
+  cout << "Optimal Value: " << optval << endl;
   cout << "Runtime: " << time << " seconds. " << endl;
 
   delete g; 
