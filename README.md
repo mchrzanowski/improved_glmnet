@@ -1,8 +1,8 @@
 improved_glmnet
 ===============
-This is a software library meant to be a performance-competitive
-alternative to the library <tt>glmnet</tt>. Currently supported features
-include:
+This is a software library meant to be a performance-competitive alternative to
+the library [<tt>glmnet</tt>](http://cran.r-project.org/web/packages/glmnet/index.html).
+Currently supported features include:
 
 * solving the elastic net optimization problem
 * generating a regularization path
@@ -42,7 +42,7 @@ directory that you can use. So, for instance, after you have built the examples,
 you can run <tt>cvx_validation.cc</tt> with the below command.
 
 ```
-cvx_validation.out 0.5 ../tests/fat/_100_300/_A ../tests/fat/_100_300/_b ../tests/fat/_100_300/_z
+./cvx_validation.out 0.5 ../tests/fat/_100_300/_A ../tests/fat/_100_300/_b ../tests/fat/_100_300/_z
 ```
 
 See the comments in any of the example source files for more detailed usage instructions.
