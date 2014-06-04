@@ -15,8 +15,9 @@ double GLM::clamp(double val){
 /* get lambda_max, which is important in
 the regularization path calculation. */
 double GLM::maxLambda(){
-  assert(eta > 0);
-  return norm(g_start, "inf") / eta;
+  // if eta = 0, just pretend it's really small.
+  double divisor = eta == 0 ? 1e-4 : eta;
+  return norm(g_start, "inf") / divisor;
 }
 
 /* evaluate the elastic net function value for a given
