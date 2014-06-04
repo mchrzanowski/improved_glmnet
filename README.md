@@ -42,8 +42,7 @@ directory that you can use. So, after you have built the examples, you can run
 <tt>cvx_validation.cc</tt>  with the following command:
 
 ```
-cvx_validation.out 0.5 ../tests/fat/_100_300/_A ../tests/fat/_100_300/_b
-  ../tests/fat/_100_300/_z
+cvx_validation.out 0.5 ../tests/fat/_100_300/_A ../tests/fat/_100_300/_b ../tests/fat/_100_300/_z
 ``` .
 
 See the comments in any of the example source files for more detailed usage instructions.
