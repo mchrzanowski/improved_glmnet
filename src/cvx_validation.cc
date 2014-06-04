@@ -14,21 +14,18 @@ optimal values are close to each other.
 As you probably don't know a good lambda value, we'll choose one for you.
 Just plug in the value we report into CVX.
 
-argc is expected to be 6.
+argc is expected to be 5.
 argv[1] = eta
 argv[2] = location of A matrix
 argv[3] = location of b vector
 argv[4] = location of initial z vector
-argv[5] = use the unoptimized solver?
 */
 int main(int argc, char **argv){
 
-  assert(argc == 6);
+  assert(argc == 5);
   arma_rng::set_seed(0);
 
   double eta = strtod(argv[1], NULL);
-  bool use_stupid_solver = strtol(argv[5], NULL, 10) > 0;
-
   mat A; colvec b; colvec z;
   A.load(argv[2], csv_ascii);
   b.load(argv[3], csv_ascii);
@@ -39,7 +36,7 @@ int main(int argc, char **argv){
   cout << "z Size: " << z.n_rows << endl;
   cout << "Eta: " << eta << endl;
 
-  GLM *g = makeGLM(A, b, eta, use_stupid_solver);
+  GLM *g = makeGLM(A, b, eta);
   
   // pick a reasonable lambda.
   double lambda = 0.25 * g->maxLambda();

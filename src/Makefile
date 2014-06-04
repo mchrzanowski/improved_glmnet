@@ -5,7 +5,7 @@ RM = rm -f
 OpenBLAS_DIR = /opt/OpenBLAS
 
 # flags
-CXXFLAGS = -std=c++0x -march=native -Wall -O4 -I$(OpenBLAS_DIR)/include \
+CXXFLAGS = -std=c++11 -march=native -Wall -O4 -I$(OpenBLAS_DIR)/include \
 						-L$(OpenBLAS_DIR)/lib
 LDFLAGS = -lopenblas -larmadillo
 
@@ -21,9 +21,10 @@ CVX = cvx_validation.out
 CV = cross_validation.out
 RP = regularization_path.out
 
+all: examples
 cv: $(CV)
 cvx: $(CVX)
-default: $(CV) $(CVX) $(RP)
+examples: $(CVX) $(CV) $(RP)
 rp: $(RP)
 
 cross_validation.out: $(OBJECTS) cross_validation.cc
@@ -47,10 +48,13 @@ Makefile.dependencies:: $(SOURCES) $(HEADERS)
 # Phony means not a "real" target, it doesn't build anything
 # The phony target "clean" is used to remove all compiled object files.
 # The phony target "spartan" is used to remove all compiled object and backup files.
-.PHONY: clean spartan
+.PHONY: clean spartan cv cvx rp all examples
 
 clean:
-	$(RM) $(TARGETS) $(CVX) $(CV) $(OBJECTS) Makefile.dependencies
+	$(RM) $(CVX) $(CV) $(RP) $(OBJECTS) Makefile.dependencies
 
 spartan: clean
 	$(RM) *~
+
+.cpp.o:
+	$(CC) $(CFLAGS) $< -o $@
