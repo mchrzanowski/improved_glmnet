@@ -24,6 +24,8 @@ For more details, see [the preliminary paper about the library](https://www.drop
 * a linear algebra subroutine package supported by <tt>armadillo</tt> such as
   <tt>OpenBLAS</tt>.
 
+In addition, I have only tested the library on machines running Linux.
+
 ###Installation
 To compile the examples and the rest of the <tt>improved_glmnet</tt> source
 code, perform the below steps:
