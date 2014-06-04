@@ -1,13 +1,13 @@
 improved_glmnet
 ===============
-This is a software library meant to be a well-written, performance-competitive
+This is a software library meant to be a performance-competitive
 alternative to the library <tt>glmnet</tt>. Currently supported features
 include:
 
 * solving the elastic net optimization problem
 * generating a regularization path
-* selecting a lambda value that has excellent generalization performance on the
-  elastic net problem
+* selecting a lambda value that has excellent generalization performance via
+  cross validation
 
 I have written one usage example per described feature, which you can see in the
 <tt>src</tt> directory:
@@ -36,10 +36,10 @@ variable to point to the installation directory on your machine. That's it.
 2. Run ```make```.
 
 ###Usage
-Each example program expects paths to the data set you'll using. There
+Each example program expects paths to the data set you'll be using. There
 are several sample datasets of different sizes included in the <tt>tests</tt>
-directory that you can use. So, after you have built the examples, you can run
-<tt>cvx_validation.cc</tt> with the below command.
+directory that you can use. So, for instance, after you have built the examples,
+you can run <tt>cvx_validation.cc</tt> with the below command.
 
 ```
 cvx_validation.out 0.5 ../tests/fat/_100_300/_A ../tests/fat/_100_300/_b ../tests/fat/_100_300/_z
