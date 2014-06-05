@@ -4,8 +4,8 @@
 #include <iostream>
 #include "glm_factory.h"
 
-using namespace std;
 using namespace arma;
+using namespace std;
 
 /*
 CVX  verifier.

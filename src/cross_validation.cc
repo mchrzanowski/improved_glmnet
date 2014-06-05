@@ -37,7 +37,7 @@ int main(int argc, char **argv){
   double cv_lambda = crossValidate(A, b, z, eta, 0.8);
   
   double time = timer.toc();
-  std::cout << "Runtime: " << time << std::endl;
+  cout << "Runtime: " << time << endl;
   cout << "Chosen lambda: " << cv_lambda << endl;
 
   return 0;

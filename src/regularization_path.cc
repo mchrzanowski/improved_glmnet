@@ -30,7 +30,7 @@ int main(int argc, char **argv){
   cout << "z Size: " << z.n_rows << endl;
   cout << "Eta: " << eta << endl;
   
-  std::map<double, double> lambda_to_optval;
+  map<double, double> lambda_to_optval;
 
   wall_clock timer;
   timer.tic();
@@ -38,7 +38,7 @@ int main(int argc, char **argv){
   regularizationPath(A, b, z, lambda_to_optval, eta);
 
   double time = timer.toc();
-  std::cout << "Runtime: " << time << std::endl;
+  cout << "Runtime: " << time << endl;
 
   for (auto &kv : lambda_to_optval){
     cout << "Lambda: " << kv.first << "\tOptVal: " << kv.second << endl;
