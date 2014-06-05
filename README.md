@@ -38,10 +38,10 @@ variable to point to the installation directory on your machine. That's it.
 2. Run ```make```.
 
 ###Usage
-Each example program expects paths to the data set you'll be using. There
+Each example program expects paths to the data you'll be using. There
 are several sample datasets of different sizes included in the <tt>tests</tt>
 directory that you can use. So, for instance, after you have built the examples,
-you can run <tt>cvx_validation.cc</tt> with the below command.
+you can run <tt>cvx_validation.out</tt> with the below command.
 
 ```
 ./cvx_validation.out 0.5 ../tests/fat/_100_300/_A ../tests/fat/_100_300/_b ../tests/fat/_100_300/_z
