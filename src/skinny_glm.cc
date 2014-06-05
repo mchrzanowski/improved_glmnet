@@ -4,6 +4,7 @@
 #include "utils.h"
 #include <assert.h>
 
+using namespace arma;
 using namespace std;
 
 SkinnyGLM::SkinnyGLM(const mat &X, const vec &y, const double eta) :
@@ -75,10 +76,9 @@ void SkinnyGLM::solve(colvec &z, double lambda, size_t max_iterations){
   if (max_iterations == 0){
     max_iterations = z.n_rows;
   }
-  const double multiplier = lambda * eta;
-
+  
   SkinnyCG cg_solver;
-  colvec delz_A, g_A, g_start_with_multi_A;
+  colvec delz_A, g_A, g_bias_A;
   colvec u = z.subvec(0, n_half-1).unsafe_col(0);
   colvec l = z.subvec(n_half, n-1).unsafe_col(0);
   colvec w = u - l;
@@ -86,15 +86,16 @@ void SkinnyGLM::solve(colvec &z, double lambda, size_t max_iterations){
   size_t i;
   uvec A, A_prev;
 
-  const colvec g_start_with_multi = g_start + multiplier;
+  const colvec g_bias = g_start + lambda * eta;
+  const double multiplier = lambda * (1 - eta);
 
   for (i = 0; i < max_iterations; i++){
 
     const colvec g_half = XX * w;
-    colvec g = g_start_with_multi;
+    colvec g = g_bias;
     g.subvec(0, n_half-1) += g_half + u * multiplier;
     g.subvec(n_half, n-1) += -g_half + l * multiplier;
-
+    
     findActiveSet(g, z, A);
     if (A.n_rows == 0) break;
 
@@ -108,28 +109,26 @@ void SkinnyGLM::solve(colvec &z, double lambda, size_t max_iterations){
       createMatrixChunks(x1, x2, x4, A, A_prev, multiplier);
       delz_A.zeros(A.n_rows);
       g_A = -g(A);
-      g_start_with_multi_A = g_start_with_multi(A);
+      g_bias_A = g_bias(A);
       cg_solver.solve(x1, x2, x4, g_A, delz_A, true);
       A_prev = A;
     }
-    
     if (norm(g_A, 2) <= G_A_TOL) break;
 
     const uword divider = x1.n_cols;
 
     // we need K * z. but we actually calculated
     // that as part of the gradient.
-    const colvec K_z_A = -g_A - g_start_with_multi_A;
+    const colvec Kz_A = -g_A - g_bias_A;
 
     colvec delz_A_top, delz_A_bottom;
     cutVector(delz_A_top, delz_A_bottom, delz_A, divider, 0);
 
-    colvec K_u_A(A.n_rows);
-    skinnyMultiply(x1, x2, x4, delz_A_top, delz_A_bottom, K_u_A);
+    colvec Ku_A(A.n_rows);
+    skinnyMultiply(x1, x2, x4, delz_A_top, delz_A_bottom, Ku_A);
 
-    if (! update(z, A, delz_A, K_z_A, K_u_A, g_start_with_multi_A))
-      break;
+    if (! update(z, A, delz_A, Kz_A, Ku_A, g_bias_A)) break;
     projectAndSparsify(w, u, l);
   }
-  //cout << "Iterations required: " << i << endl;
+  // cout <<  "Iterations required: " << i << endl;
 }

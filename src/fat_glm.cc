@@ -62,11 +62,11 @@ void FatGLM::solve(colvec &z, double lambda, size_t max_iterations){
     max_iterations = z.n_rows;
   }
 
-  const double multiplier = lambda * eta;
-  const colvec g_start_with_multi = g_start + multiplier;
+  const double multiplier = lambda * (1 - eta);
+  const colvec g_bias = g_start + lambda * eta;
 
   FatCG cg_solver;
-  colvec delz_A, g_A, g_start_with_multi_A;
+  colvec delz_A, g_A, g_bias_A;
   colvec u = z.subvec(0, n_half-1).unsafe_col(0);
   colvec l = z.subvec(n_half, n-1).unsafe_col(0);
   colvec w = u - l;
@@ -76,12 +76,13 @@ void FatGLM::solve(colvec &z, double lambda, size_t max_iterations){
   colvec Kz_A;
 
   for (i = 0; i < max_iterations; i++){
+
     const colvec g_half = ((X * w).t() * X).t();
-    colvec g = g_start_with_multi;
+    colvec g = g_bias;
     g.subvec(0, n_half-1) += g_half + u * multiplier;
     g.subvec(n_half, n-1) += -g_half + l * multiplier;
     
-    findActiveSet(g, z, A);    
+    findActiveSet(g, z, A);
     if (A.n_rows == 0) break;
     
     // if the active set hasn't changed since the prev iteration,
@@ -94,7 +95,7 @@ void FatGLM::solve(colvec &z, double lambda, size_t max_iterations){
       createMatrixChunks(x1, x2, A, A_prev);
       delz_A.zeros(A.n_rows);
       g_A = -g(A);
-      g_start_with_multi_A = g_start_with_multi(A);
+      g_bias_A = g_bias(A);
 
       cg_solver.solve(x1, x2, g_A, delz_A, multiplier, true);  
       A_prev = A;
@@ -103,18 +104,17 @@ void FatGLM::solve(colvec &z, double lambda, size_t max_iterations){
 
     // we need K * z. but we actually calculated
     // that as part of the gradient.
-    const colvec K_z_A = -g_A - g_start_with_multi_A;
+    const colvec Kz_A = -g_A - g_bias_A;
 
     const uword divider = x1.n_cols;
     colvec delz_A_top, delz_A_bottom;
     cutVector(delz_A_top, delz_A_bottom, delz_A, divider, 0);
 
-    colvec K_u_A(A.n_rows);
-    fatMultiply(x1, x2, delz_A_top, delz_A_bottom, multiplier, K_u_A);
+    colvec Ku_A(A.n_rows);
+    fatMultiply(x1, x2, delz_A_top, delz_A_bottom, multiplier, Ku_A);
 
-    if (! update(z, A, delz_A, K_z_A, K_u_A, g_start_with_multi_A))
-      break;
+    if (! update(z, A, delz_A, Kz_A, Ku_A, g_bias_A)) break;
     projectAndSparsify(w, u, l);
   }
-  //cout << "Iterations required: " << i << endl;
+  // cout <<  "Iterations required: " << i << endl;
 }

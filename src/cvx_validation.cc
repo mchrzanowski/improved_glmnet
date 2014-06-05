@@ -1,5 +1,6 @@
 #include <armadillo>
 #include <assert.h>
+#include <cstring>
 #include <iostream>
 #include "glm_factory.h"
 
@@ -14,15 +15,16 @@ optimal values are close to each other.
 As you probably don't know a good lambda value, we'll choose one for you.
 Just plug in the value we report into CVX.
 
-argc is expected to be 5.
+argc must 5 or 6: argument 6 is optional.
 argv[1] = eta
 argv[2] = location of A matrix
 argv[3] = location of b vector
 argv[4] = location of initial z vector
+argv[5] = use unoptimized solver? 0 or 1.
 */
 int main(int argc, char **argv){
 
-  assert(argc == 5);
+  assert(argc == 5 || argc == 6);
   arma_rng::set_seed(0);
 
   double eta = strtod(argv[1], NULL);
@@ -36,7 +38,8 @@ int main(int argc, char **argv){
   cout << "z Size: " << z.n_rows << endl;
   cout << "Eta: " << eta << endl;
 
-  GLM *g = makeGLM(A, b, eta);
+  bool use_unopt_solver = argc == 6 && ! strcmp(argv[5], "1") ? true : false;
+  GLM *g = makeGLM(A, b, eta, use_unopt_solver);
   
   // pick a reasonable lambda.
   double lambda = 0.25 * g->maxLambda();

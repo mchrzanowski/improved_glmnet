@@ -32,8 +32,8 @@ void TestGLM::solve(colvec &z, double lambda, size_t max_iterations){
   colvec delz_A, g_A;
 
   const mat XX_I = XX + speye(XX.n_rows, XX.n_cols) * lambda * (1 - eta);
-  const mat K = join_vert(join_horiz(XX, -XX), join_horiz(-XX, XX));
-  const colvec g_init = g_start + lambda * eta;
+  const mat K = join_vert(join_horiz(XX_I, -XX), join_horiz(-XX, XX_I));
+  const colvec g_bias = g_start + lambda * eta;
 
   colvec u = z.subvec(0, n_half-1).unsafe_col(0);
   colvec l = z.subvec(n_half, 2*n_half-1).unsafe_col(0);
@@ -41,32 +41,28 @@ void TestGLM::solve(colvec &z, double lambda, size_t max_iterations){
 
   for (i = 0; i < max_iterations; i++){
 
-    const colvec g = g_init + K * z;
+    const colvec g = g_bias + K * z;
 
     findActiveSet(g, z, A);
-    const size_t A_size = A.n_rows;
+    if (A.n_rows == 0) break;
 
-    if (A_size == 0) break;
-
-    if (A.n_rows == A_prev.n_rows && accu(A == A_prev) == A_size){
+    if (A.n_rows == A_prev.n_rows && accu(A == A_prev) == A.n_rows){
       cg_solver.solve(K_A, g_A, delz_A, false, 3);
     }
     else {
       K_A = K(A, A);
-      delz_A.zeros(A_size);
+      delz_A.zeros(A.n_rows);
       g_A = -g(A);
       cg_solver.solve(K_A, g_A, delz_A, true, 3);
       A_prev = A;
     }
-
     if (norm(g_A, 2) <= G_A_TOL) break;
 
-    const colvec Kz = K_A * z(A);
-    const colvec Ku = K_A * delz_A;
-    if (! update(z, A, delz_A, Kz, Ku, g_init(A)))
-      break;
+    const colvec Kz_A = K_A * z(A);
+    const colvec Ku_A = K_A * delz_A;
+
+    if (! update(z, A, delz_A, Kz_A, Ku_A, g_bias(A))) break;
     projectAndSparsify(w, u, l);
   }
-
-  cout << "Iterations required: " << i << endl;
+  // cout <<  "Iterations required: " << i << endl;
 }
