@@ -31,17 +31,19 @@ int main(int argc, char **argv){
   cout << "Eta: " << eta << endl;
   
   map<double, double> lambda_to_optval;
+  map<double, colvec> lambda_to_zstar;
 
   wall_clock timer;
   timer.tic();
 
-  regularizationPath(A, b, z, lambda_to_optval, eta);
+  regularizationPath(A, b, z, lambda_to_optval, lambda_to_zstar, eta);
 
   double time = timer.toc();
   cout << "Runtime: " << time << endl;
 
   for (auto &kv : lambda_to_optval){
-    cout << "Lambda: " << kv.first << "\tOptVal: " << kv.second << endl;
+    cout << "Lambda: " << kv.first << "\tOptVal: " << kv.second <<
+      "\t L1 norm: " << norm(lambda_to_zstar[kv.first], 1) << endl;
   }
 
   return 0;

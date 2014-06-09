@@ -73,9 +73,9 @@ regularizationPath(const mat &X,
                     const colvec &y,
                     colvec &z,
                     std::map<double, double> &lambda_to_optval,
+                    std::map<double, colvec> &lambda_to_zstar,
                     double eta,
                     size_t max_iterations){
-
   GLM *g = makeGLM(X, y, eta);
   double max_lambda = g->maxLambda();
   double lambda = max_lambda;
@@ -83,6 +83,7 @@ regularizationPath(const mat &X,
     g->solve(z, lambda, max_iterations);
     double value = GLM::evaluate(X, y, z, lambda, eta);
     lambda_to_optval[lambda] = value;
+    lambda_to_zstar[lambda] = z;
     lambda *= 0.9545486;
   }
   delete g;

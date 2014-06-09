@@ -39,7 +39,9 @@ protected:
                           colvec &u,
                           colvec &l);
 
-  void findActiveSet(const colvec &g, const colvec &z, uvec &A);
+  void findActiveSet(const colvec &g,
+                      const colvec &z,
+                      uvec &A);
 
 private:
   static double clamp(double val);

@@ -24,5 +24,6 @@ regularizationPath(const mat &X,
                     const colvec &y,
                     colvec &z,
                     std::map<double, double> &lambda_to_optval,
+                    std::map<double, colvec> &lambda_to_zstar,
                     double eta,
                     size_t max_iterations=0);
