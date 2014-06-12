@@ -7,11 +7,6 @@ using namespace arma;
 
 GLM::GLM(double eta) : eta(eta) {}
 
-/* project to non-negative orthant */
-double GLM::clamp(double val){
-  return std::max(val, 0.);
-}
-
 /* get lambda_max, which is important in
 the regularization path calculation. */
 double GLM::maxLambda(){
@@ -55,6 +50,7 @@ bool GLM::update(colvec &z, const uvec &A, const colvec &delz_A,
 then figure out whether i or n_half + i can be nonzero.
 sparsification is really, really useful for speeding up convergence. */
 void GLM::projectAndSparsify(colvec &w, colvec &u, colvec &l){
+  static const auto clamp = [](double d) { return d >= 0 ? d : 0; };
   u.transform(clamp);
   l.transform(clamp);
   sparsify(w, u, l);
@@ -77,8 +73,8 @@ double GLM::aggressiveStep(const uvec &A, const vec &eta,
                             const colvec &Kz, const colvec &Ku){
 
   // approximation of gradient at a knot.
-  const auto approx = [](double alpha, double p, double q)
-                        { return p * alpha + q; };
+  static const auto approx = [](double alpha, double p, double q)
+                                { return p * alpha + q; };
   colvec z_A = z(A);
 
   // our knots are all active indices for which, after a full step size,

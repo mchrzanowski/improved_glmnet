@@ -8,7 +8,14 @@ class SkinnyGLM : public GLM {
 public:
   SkinnyGLM(const mat &X, const vec &y, double eta);
 
-  void solve(colvec &z, double lambda, size_t max_iterations=0);
+  void sequential_solve(colvec &z,
+                        double lambda, double prev_lambda,
+                        size_t max_iterations);
+
+  void solve(colvec &z,
+              double lambda,
+              uvec *blacklisted=NULL,
+              size_t max_iterations=0);
 
 private:
   void createMatrixChunks(mat &x1, mat &x2, mat &x4,

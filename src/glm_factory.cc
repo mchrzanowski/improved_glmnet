@@ -55,7 +55,7 @@ crossValidate(const mat &X,
   double max_lambda = g->maxLambda();
   double lambda = max_lambda;
   for (unsigned i = 0; i < 100; i++){
-    g->solve(z, lambda, max_iterations);
+    g->solve(z, lambda, NULL, max_iterations);
     double val = GLM::evaluate(X_test, y_test, z, lambda, eta);
     if (val < best_val){
       best_lambda = lambda;
@@ -76,14 +76,22 @@ regularizationPath(const mat &X,
                     std::map<double, colvec> &lambda_to_zstar,
                     double eta,
                     size_t max_iterations){
+  
   GLM *g = makeGLM(X, y, eta);
   double max_lambda = g->maxLambda();
   double lambda = max_lambda;
+  double prev_lambda = -1;
   for (unsigned i = 0; i < 100; i++){
-    g->solve(z, lambda, max_iterations);
+    if (i == 0){
+      g->solve(z, lambda, NULL, max_iterations);
+    }
+    else {
+      g->sequential_solve(z, lambda, prev_lambda, max_iterations);
+    }
     double value = GLM::evaluate(X, y, z, lambda, eta);
     lambda_to_optval[lambda] = value;
     lambda_to_zstar[lambda] = z;
+    prev_lambda = lambda;
     lambda *= 0.9545486;
   }
   delete g;

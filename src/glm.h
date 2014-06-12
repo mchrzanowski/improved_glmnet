@@ -12,8 +12,14 @@ public:
   GLM(double eta);
 
   virtual void solve(colvec &z,
-                      double lambda, 
+                      double lambda,
+                      uvec *blacklisted=NULL,
                       size_t max_iterations=0) = 0;
+
+  virtual void sequential_solve(colvec &z,
+                                double lambda,
+                                double prev_lambda,
+                                size_t max_iterations=0) = 0;
 
   double maxLambda();
 
@@ -43,9 +49,7 @@ protected:
                       const colvec &z,
                       uvec &A);
 
-private:
-  static double clamp(double val);
-  
+private:  
   void sparsify(colvec &w,
                 colvec &u,
                 colvec &l);

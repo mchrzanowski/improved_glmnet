@@ -20,7 +20,7 @@ argv[1] = eta
 argv[2] = location of A matrix
 argv[3] = location of b vector
 argv[4] = location of initial z vector
-argv[5] = use unoptimized solver? 0 or 1.
+argv[5] = use unoptimized solver? (if so, 1)
 */
 int main(int argc, char **argv){
 

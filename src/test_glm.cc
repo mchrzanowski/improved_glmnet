@@ -18,7 +18,12 @@ TestGLM::TestGLM(const mat &X, const vec &y, double eta) :
   g_start = join_vert(-Xy, Xy);
 }
 
-void TestGLM::solve(colvec &z, double lambda, size_t max_iterations){
+void TestGLM::sequential_solve(colvec &z, double lambda, double prev_lambda,
+                              size_t max_iterations){
+  
+}
+
+void TestGLM::solve(colvec &z, double lambda, uvec *blacklisted, size_t max_iterations){
 
   assert(lambda > 0);
   if (max_iterations == 0){

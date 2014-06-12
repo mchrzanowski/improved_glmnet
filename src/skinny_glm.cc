@@ -70,7 +70,12 @@ void SkinnyGLM::createMatrixChunks(mat &x1, mat &x2, mat &x4,
 
 }
 
-void SkinnyGLM::solve(colvec &z, double lambda, size_t max_iterations){
+void SkinnyGLM::sequential_solve(colvec &z, double lambda, double prev_lambda,
+                              size_t max_iterations){
+  ;
+}
+
+void SkinnyGLM::solve(colvec &z, double lambda, uvec *blacklisted, size_t max_iterations){
 
   assert(lambda > 0);
   if (max_iterations == 0){
