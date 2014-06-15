@@ -82,14 +82,12 @@ regularizationPath(const mat &X,
   double lambda = max_lambda;
   double prev_lambda = -1;
   for (unsigned i = 0; i < 100; i++){
-    size_t iters;
     if (i == 0){
-      iters = g->solve(z, lambda, max_iterations);
+      g->solve(z, lambda, max_iterations);
     }
     else {
-      iters = g->sequential_solve(z, lambda, prev_lambda, max_iterations);
+      g->sequential_solve(z, lambda, prev_lambda, max_iterations);
     }
-    //std::cout << i << " : " << iters << std::endl;
     double value = GLM::evaluate(X, y, z, lambda, eta);
     lambda_to_optval[lambda] = value;
     lambda_to_zstar[lambda] = z;
