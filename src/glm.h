@@ -16,17 +16,14 @@ public:
                         size_t max_iterations=0) = 0;
 
   virtual size_t sequential_solve(colvec &z,
-                                  double lambda,
-                                  double prev_lambda,
+                                  double lambda, double prev_lambda,
                                   size_t max_iterations=0) = 0;
 
   double maxLambda();
 
   static double evaluate(const mat &X,
-                          const colvec &y,
-                          const colvec &z,
-                          double lambda,
-                          double eta);
+                          const colvec &y, const colvec &z,
+                          double lambda, double eta);
 
 protected:
   const double G_A_TOL = 5e-1;

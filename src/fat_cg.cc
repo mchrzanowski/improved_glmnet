@@ -80,7 +80,6 @@ void FatCG::fullSolve(const mat &x1,
   const vec b_bottom = b.subvec(half, x.n_rows-1).unsafe_col(0);
 
   if (restart) {
-
     fatMultiply(x1, x2, x_top, x_bottom, multiplier, r_top, r_bottom);
     
     r_top -= b_top;
