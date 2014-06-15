@@ -9,7 +9,7 @@ using namespace arma;
 using namespace std;
 
 FatGLM::FatGLM(const mat &X_, const vec &y, double eta) :
-                GLM(eta), X(X_), y(y), n(2*X.n_cols), n_half(X.n_cols) {
+                GLM(eta), X(X_), n(2*X.n_cols), n_half(X.n_cols) {
 
   assert(eta >= 0 && eta <= 1);
   const colvec Xy = (y.t() * X).t();
@@ -64,36 +64,38 @@ void FatGLM::calculateGradient(const colvec &z, double lambda, colvec &g){
   const colvec g_bias = g_start + lambda * eta;
   const double multiplier = lambda * (1 - eta);
   const colvec g_half = ((X * w).t() * X).t();
-  g = g_bias;
-  g.subvec(0, n_half-1) += g_half + u * multiplier;
-  g.subvec(n_half, n-1) += -g_half + l * multiplier;
+  g = g_bias + z * multiplier;
+  g.subvec(0, n_half-1) += g_half;
+  g.subvec(n_half, n-1) += -g_half;
 }
 
-void FatGLM::sequential_solve(colvec &z,
-                              double lambda, double prev_lambda,
-                              size_t max_iterations){
+size_t FatGLM::sequential_solve(colvec &z,
+                                double lambda, double prev_lambda,
+                                size_t max_iterations){
 
   colvec u = z.subvec(0, n_half-1).unsafe_col(0);
   colvec l = z.subvec(n_half, n-1).unsafe_col(0);
   colvec w = u - l;
 
-  colvec val = abs(((y - X * w).t() * X).t());
-  
+  const colvec yX = g_start.subvec(n_half, 2*n_half-1);
+
+  colvec val = abs(yX - ((X * w).t() * X).t());
   uvec excluded = find(val < eta * (2 * lambda - prev_lambda));
   excluded = join_vert(excluded, excluded + n_half);
 
   colvec g;
   uvec active, to_unexclude;
 
+  size_t iters = 0;
+
   while (true){
 
-    solve(z, lambda, &excluded, max_iterations);
+    iters += solve(z, g, lambda, &excluded, max_iterations);
 
     /* check KKT conditions.
     is an excluded variable in the active set?
     if so, we screwed up. remove it from the blacklist
     and re-do the optimization. */
-    calculateGradient(z, lambda, g);
     findActiveSet(g, z, active);
     vintersection(excluded, active, to_unexclude);
     if (to_unexclude.n_rows > 0){
@@ -102,12 +104,24 @@ void FatGLM::sequential_solve(colvec &z,
     else {
       break;
     }
+    /* we can re-use g for the next lambda value.
+      just get rid of the portions dealing with the
+      current lambda */
+    g -= lambda * eta + z * lambda * (1 - eta);
   }
+  return iters;
 }
 
-void FatGLM::solve(colvec &z,
+size_t FatGLM::solve(colvec &z,
                     double lambda,
-                    uvec *blacklisted,
+                    size_t max_iterations) {
+  colvec g;
+  return solve(z, g, lambda, NULL, max_iterations);
+}
+
+size_t FatGLM::solve(colvec &z, colvec &g,
+                    double lambda,
+                    const uvec *blacklisted,
                     size_t max_iterations){
 
   assert(lambda > 0);
@@ -116,21 +130,29 @@ void FatGLM::solve(colvec &z,
   }
 
   FatCG cg_solver;
-  colvec delz_A, g_A, g_bias_A;
+  colvec delz_A, g_A, g_bias_A, Kz_A;
   colvec u = z.subvec(0, n_half-1).unsafe_col(0);
   colvec l = z.subvec(n_half, n-1).unsafe_col(0);
   colvec w = u - l;
   mat x1, x2;
   size_t i;
   uvec A, A_prev;
-  colvec g, Kz_A;
 
   const colvec g_bias = g_start + lambda * eta;
   const double multiplier = lambda * (1 - eta);
 
   for (i = 0; i < max_iterations; i++){
 
-    calculateGradient(z, lambda, g);
+    /* use the gradient from the previous run
+      for the first iteration of this run.
+      we just have to adjust by the current lambda. */
+    if (i == 0 && g.n_rows == z.n_rows){
+      g += lambda * eta + z * lambda * (1 - eta);
+    }
+    else {
+      calculateGradient(z, lambda, g);      
+    }
+
     findActiveSet(g, z, A);
     
     if (blacklisted != NULL){
@@ -142,15 +164,14 @@ void FatGLM::solve(colvec &z,
     // then we can take a few more CG steps in this direction
     // and don't have to re-create the matrix chunks.
     if (A.n_rows == A_prev.n_rows && accu(A == A_prev) == A.n_rows){
-      cg_solver.solve(x1, x2, g_A, delz_A, multiplier, false);
+      cg_solver.solve(x1, x2, g_A, delz_A, multiplier, false, 5 + (i / 100));
     }
     else {
       createMatrixChunks(x1, x2, A, A_prev);
       delz_A.zeros(A.n_rows);
       g_A = -g(A);
       g_bias_A = g_bias(A);
-
-      cg_solver.solve(x1, x2, g_A, delz_A, multiplier, true);  
+      cg_solver.solve(x1, x2, g_A, delz_A, multiplier, true, 5 + (i / 100));
       A_prev = A;
     }
     if (norm(g_A, 2) <= G_A_TOL) break;
@@ -170,4 +191,5 @@ void FatGLM::solve(colvec &z,
 
     projectAndSparsify(w, u, l);
   }
+  return i;
 }

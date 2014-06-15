@@ -70,12 +70,23 @@ void SkinnyGLM::createMatrixChunks(mat &x1, mat &x2, mat &x4,
 
 }
 
-void SkinnyGLM::sequential_solve(colvec &z, double lambda, double prev_lambda,
-                              size_t max_iterations){
-  ;
+size_t SkinnyGLM::sequential_solve(colvec &z,
+                                  double lambda, double prev_lambda,
+                                  size_t max_iterations){
+  return 0;
 }
 
-void SkinnyGLM::solve(colvec &z, double lambda, uvec *blacklisted, size_t max_iterations){
+size_t SkinnyGLM::solve(colvec &z,
+                        double lambda,
+                        size_t max_iterations){
+  colvec g;
+  return solve(z, g, lambda, NULL, max_iterations);
+}
+
+size_t SkinnyGLM::solve(colvec &z, colvec &g,
+                        double lambda,
+                        const uvec *blacklisted,
+                        size_t max_iterations){
 
   assert(lambda > 0);
   if (max_iterations == 0){
@@ -87,6 +98,7 @@ void SkinnyGLM::solve(colvec &z, double lambda, uvec *blacklisted, size_t max_it
   colvec u = z.subvec(0, n_half-1).unsafe_col(0);
   colvec l = z.subvec(n_half, n-1).unsafe_col(0);
   colvec w = u - l;
+  
   mat x1, x2, x4;
   size_t i;
   uvec A, A_prev;
@@ -96,10 +108,15 @@ void SkinnyGLM::solve(colvec &z, double lambda, uvec *blacklisted, size_t max_it
 
   for (i = 0; i < max_iterations; i++){
 
-    const colvec g_half = XX * w;
-    colvec g = g_bias;
-    g.subvec(0, n_half-1) += g_half + u * multiplier;
-    g.subvec(n_half, n-1) += -g_half + l * multiplier;
+    if (i == 0 && g.n_rows == z.n_rows){
+      g += lambda * eta + z * lambda * (1 - eta);
+    }
+    else {
+      const colvec g_half = XX * w;
+      g = g_bias + z * multiplier;
+      g.subvec(0, n_half-1) += g_half;
+      g.subvec(n_half, n-1) += -g_half;
+    }
     
     findActiveSet(g, z, A);
     if (A.n_rows == 0) break;
@@ -135,5 +152,5 @@ void SkinnyGLM::solve(colvec &z, double lambda, uvec *blacklisted, size_t max_it
     if (! update(z, A, delz_A, Kz_A, Ku_A, g_bias_A)) break;
     projectAndSparsify(w, u, l);
   }
-  // cout <<  "Iterations required: " << i << endl;
+  return i;
 }

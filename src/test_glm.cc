@@ -18,12 +18,23 @@ TestGLM::TestGLM(const mat &X, const vec &y, double eta) :
   g_start = join_vert(-Xy, Xy);
 }
 
-void TestGLM::sequential_solve(colvec &z, double lambda, double prev_lambda,
-                              size_t max_iterations){
-  
+size_t TestGLM::sequential_solve(colvec &z,
+                                double lambda, double prev_lambda,
+                                size_t max_iterations){
+  return 0;
 }
 
-void TestGLM::solve(colvec &z, double lambda, uvec *blacklisted, size_t max_iterations){
+size_t TestGLM::solve(colvec &z,
+                    double lambda,
+                    size_t max_iterations){
+  colvec g;
+  return solve(z, g, lambda, NULL, max_iterations);
+}
+
+size_t TestGLM::solve(colvec &z, colvec &g,
+                      double lambda,
+                      const uvec *blacklisted,
+                      size_t max_iterations){
 
   assert(lambda > 0);
   if (max_iterations == 0){
@@ -46,7 +57,7 @@ void TestGLM::solve(colvec &z, double lambda, uvec *blacklisted, size_t max_iter
 
   for (i = 0; i < max_iterations; i++){
 
-    const colvec g = g_bias + K * z;
+    g = g_bias + K * z;
 
     findActiveSet(g, z, A);
     if (A.n_rows == 0) break;
@@ -69,5 +80,5 @@ void TestGLM::solve(colvec &z, double lambda, uvec *blacklisted, size_t max_iter
     if (! update(z, A, delz_A, Kz_A, Ku_A, g_bias(A))) break;
     projectAndSparsify(w, u, l);
   }
-  // cout <<  "Iterations required: " << i << endl;
+  return i;
 }

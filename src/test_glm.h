@@ -11,13 +11,18 @@ class TestGLM : public GLM {
 public:
   TestGLM(const mat &X, const vec &y, const double eta);
   
-  void sequential_solve(colvec &z, double lambda, double prev_lambda,
-                              size_t max_iterations);
-  
-  void solve(colvec &z,
+  size_t solve(colvec &z,
               double lambda,
-              uvec *blacklisted=NULL,
               size_t max_iterations=0);
+  
+  size_t sequential_solve(colvec &z,
+                          double lambda, double prev_lambda,
+                          size_t max_iterations=0);
+
+  size_t solve(colvec &z, colvec &g,
+                double lambda,
+                const uvec *blacklisted=NULL,
+                size_t max_iterations=0);
 
 private:
   mat XX, K;
