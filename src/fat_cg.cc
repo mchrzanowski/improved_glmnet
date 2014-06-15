@@ -18,7 +18,7 @@ void FatCG::subsolve(const mat &X,
     prev_r_sq_sum = dot(r_top, r_top);
   }
 
-  for (size_t i = 0; i < iterations && prev_r_sq_sum > RESIDUAL_TOL; i++){
+  for (size_t i = 0; i < iterations; i++){
     colvec Ap_top(p_top.n_rows);
     fatMultiply(X, p_top, multiplier, Ap_top);
 
@@ -90,7 +90,7 @@ void FatCG::fullSolve(const mat &x1,
     prev_r_sq_sum = dot(r_top, r_top) + dot(r_bottom, r_bottom);
   }
 
-  for (size_t i = 0; i < iterations && prev_r_sq_sum > RESIDUAL_TOL; i++){
+  for (size_t i = 0; i < iterations; i++){
     colvec Ap_top(p_top.n_rows), Ap_bottom(p_bottom.n_rows);
     fatMultiply(x1, x2, p_top, p_bottom, multiplier, Ap_top, Ap_bottom);
 

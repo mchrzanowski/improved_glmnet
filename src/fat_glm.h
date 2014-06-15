@@ -30,5 +30,5 @@ private:
   void calculateGradient(const colvec &z, double lambda, colvec &g);
 
   const mat &X;
-  const uword n, n_half;
+  const uword n_half, n;
 };

@@ -6,10 +6,9 @@
 #include "utils.h"
 
 using namespace arma;
-using namespace std;
 
 FatGLM::FatGLM(const mat &X_, const vec &y, double eta) :
-                GLM(eta), X(X_), n(2*X.n_cols), n_half(X.n_cols) {
+                GLM(eta), X(X_), n_half(X.n_cols), n(2*X.n_cols) {
 
   assert(eta >= 0 && eta <= 1);
   const colvec Xy = (y.t() * X).t();
@@ -18,8 +17,9 @@ FatGLM::FatGLM(const mat &X_, const vec &y, double eta) :
 
 /* x1 and x2 are the rows from X based on the active set A.
 x1 comes from the first n vals of X, x2 the bottom. */
-void FatGLM::createMatrixChunks(mat &x1, mat &x2,
-                                const uvec &A, const uvec &A_prev){
+void
+FatGLM::createMatrixChunks(mat &x1, mat &x2,
+                            const uvec &A, const uvec &A_prev){
   
   // get the index of A that is at the boundary of the top
   // n elements and the bottom ones.
@@ -55,7 +55,8 @@ void FatGLM::createMatrixChunks(mat &x1, mat &x2,
 
 }
 
-void FatGLM::calculateGradient(const colvec &z, double lambda, colvec &g){
+void
+FatGLM::calculateGradient(const colvec &z, double lambda, colvec &g){
 
   colvec u = z.subvec(0, n_half-1).unsafe_col(0);
   colvec l = z.subvec(n_half, n-1).unsafe_col(0);
@@ -69,9 +70,10 @@ void FatGLM::calculateGradient(const colvec &z, double lambda, colvec &g){
   g.subvec(n_half, n-1) += -g_half;
 }
 
-size_t FatGLM::sequential_solve(colvec &z,
-                                double lambda, double prev_lambda,
-                                size_t max_iterations){
+size_t
+FatGLM::sequential_solve(colvec &z,
+                          double lambda, double prev_lambda,
+                          size_t max_iterations){
 
   colvec u = z.subvec(0, n_half-1).unsafe_col(0);
   colvec l = z.subvec(n_half, n-1).unsafe_col(0);
@@ -112,17 +114,19 @@ size_t FatGLM::sequential_solve(colvec &z,
   return iters;
 }
 
-size_t FatGLM::solve(colvec &z,
-                    double lambda,
-                    size_t max_iterations) {
+size_t
+FatGLM::solve(colvec &z,
+              double lambda,
+              size_t max_iterations) {
   colvec g;
   return solve(z, g, lambda, NULL, max_iterations);
 }
 
-size_t FatGLM::solve(colvec &z, colvec &g,
-                    double lambda,
-                    const uvec *blacklisted,
-                    size_t max_iterations){
+size_t
+FatGLM::solve(colvec &z, colvec &g,
+              double lambda,
+              const uvec *blacklisted,
+              size_t max_iterations){
 
   assert(lambda > 0);
   if (max_iterations == 0){

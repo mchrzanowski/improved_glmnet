@@ -4,10 +4,9 @@
 #include "utils.h"
 
 using namespace arma;
-using namespace std;
 
 TestGLM::TestGLM(const mat &X, const vec &y, double eta) : 
-                  GLM(eta), n_half(X.n_cols) {
+                  GLM(eta), n_half(X.n_cols), n(2*X.n_cols) {
 
   assert(eta >= 0 && eta <= 1);
 
@@ -26,7 +25,7 @@ size_t TestGLM::sequential_solve(colvec &z,
   colvec l = z.subvec(n_half, n-1).unsafe_col(0);
   colvec w = u - l;
 
-  const colvec yX = g_start.subvec(n_half, 2*n_half-1);
+  const colvec yX = g_start.subvec(n_half, n-1);
 
   colvec val = abs(yX - XX * w);
   uvec excluded = find(val < eta * (2 * lambda - prev_lambda));
@@ -85,7 +84,7 @@ size_t TestGLM::solve(colvec &z, colvec &g,
   const colvec g_bias = g_start + lambda * eta;
 
   colvec u = z.subvec(0, n_half-1).unsafe_col(0);
-  colvec l = z.subvec(n_half, 2*n_half-1).unsafe_col(0);
+  colvec l = z.subvec(n_half, n-1).unsafe_col(0);
   colvec w = u - l;
 
   for (i = 0; i < max_iterations; i++){

@@ -26,5 +26,5 @@ public:
 
 private:
   mat XX, K;
-  const uword n_half;
+  const uword n_half, n;
 };

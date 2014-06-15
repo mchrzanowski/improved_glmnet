@@ -5,7 +5,6 @@
 #include <assert.h>
 
 using namespace arma;
-using namespace std;
 
 SkinnyGLM::SkinnyGLM(const mat &X, const vec &y, const double eta) :
                       GLM(eta), n(2*X.n_cols), n_half(X.n_cols) {
@@ -15,9 +14,10 @@ SkinnyGLM::SkinnyGLM(const mat &X, const vec &y, const double eta) :
   g_start = join_vert(-Xy, Xy);
 }
 
-void SkinnyGLM::createMatrixChunks(mat &x1, mat &x2, mat &x4,
-                                    const uvec &A, const uvec &A_prev,
-                                    double multiplier){
+void
+SkinnyGLM::createMatrixChunks(mat &x1, mat &x2, mat &x4,
+                              const uvec &A, const uvec &A_prev,
+                              double multiplier){
   
   // get the index of A that is at the boundary of the top
   // n elements and the bottom ones.
@@ -69,9 +69,10 @@ void SkinnyGLM::createMatrixChunks(mat &x1, mat &x2, mat &x4,
   }
 }
 
-size_t SkinnyGLM::sequential_solve(colvec &z,
-                                  double lambda, double prev_lambda,
-                                  size_t max_iterations){
+size_t
+SkinnyGLM::sequential_solve(colvec &z,
+                            double lambda, double prev_lambda,
+                            size_t max_iterations){
 
   colvec u = z.subvec(0, n_half-1).unsafe_col(0);
   colvec l = z.subvec(n_half, n-1).unsafe_col(0);
@@ -112,17 +113,19 @@ size_t SkinnyGLM::sequential_solve(colvec &z,
   return iters;
 }
 
-size_t SkinnyGLM::solve(colvec &z,
-                        double lambda,
-                        size_t max_iterations){
+size_t
+SkinnyGLM::solve(colvec &z,
+                  double lambda,
+                  size_t max_iterations){
   colvec g;
   return solve(z, g, lambda, NULL, max_iterations);
 }
 
-size_t SkinnyGLM::solve(colvec &z, colvec &g,
-                        double lambda,
-                        const uvec *blacklisted,
-                        size_t max_iterations){
+size_t
+SkinnyGLM::solve(colvec &z, colvec &g,
+                  double lambda,
+                  const uvec *blacklisted,
+                  size_t max_iterations){
 
   assert(lambda > 0);
   if (max_iterations == 0){
