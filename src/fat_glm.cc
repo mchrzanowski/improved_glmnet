@@ -61,7 +61,7 @@ FatGLM::createMatrixChunks(mat &x1, mat &x2,
 size_t
 FatGLM::solve(colvec &z, colvec &g,
               double lambda,
-              const uvec *blacklisted,
+              const uvec *whitelisted,
               size_t max_iterations){
 
   assert(lambda > 0);
@@ -91,9 +91,8 @@ FatGLM::solve(colvec &z, colvec &g,
     }
 
     findActiveSet(g, z, A);
-    
-    if (blacklisted != NULL){
-      vdifference(A, *blacklisted, A);
+    if (whitelisted != NULL){
+      vintersection(A, *whitelisted, A);
     }
     if (A.n_rows == 0) break;
     

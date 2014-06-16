@@ -76,7 +76,7 @@ SkinnyGLM::createMatrixChunks(mat &x1, mat &x2, mat &x4,
 size_t
 SkinnyGLM::solve(colvec &z, colvec &g,
                   double lambda,
-                  const uvec *blacklisted,
+                  const uvec *whitelisted,
                   size_t max_iterations){
 
   assert(lambda > 0);
@@ -104,6 +104,9 @@ SkinnyGLM::solve(colvec &z, colvec &g,
     }
     
     findActiveSet(g, z, A);
+    if (whitelisted != NULL){
+      vintersection(A, *whitelisted, A);
+    }
     if (A.n_rows == 0) break;
 
     // if the active set hasn't changed since the prev iteration,

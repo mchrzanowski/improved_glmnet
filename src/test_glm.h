@@ -19,7 +19,7 @@ public:
   
   size_t solve(colvec &z, colvec &g,
                 double lambda,
-                const uvec *blacklisted=NULL,
+                const uvec *whitelisted=NULL,
                 size_t max_iterations=0);
 
 private:

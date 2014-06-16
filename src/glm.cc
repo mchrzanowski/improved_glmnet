@@ -54,28 +54,29 @@ GLM::sequential_solve(colvec &z,
   colvec val;
   calculateXXw(w, val);
 
-  uvec strong = find(abs(yX - val) < eta * (2 * lambda - prev_lambda));
+  // whitelisted variables.
+  uvec strong = find(abs(yX - val) >= eta * (2 * lambda - prev_lambda));
   strong = join_vert(strong, strong + n_half);
 
   colvec g;
-  uvec active, to_unexclude;
+  uvec active, to_include;
 
   size_t iters = 0;
 
-  // solve for non-excluded variables.
+  // solve for whitelisted variables.
   iters += solve(z, g, lambda, &strong, max_iterations);
 
   /* check KKT conditions for strong set.
-  is a predictor in the active set?
-  if so, we screwed up. remove it from the blacklist
+  is a predictor in the active set that wasn't in the strong set?
+  if so, we screwed up. add it to the whitelist
   and re-do the optimization. */
   calculateGradient(z, lambda, g);
   findActiveSet(g, z, active);
-  vintersection(strong, active, to_unexclude);
+  vdifference(active, strong, to_include);
 
   // solve again, if needed.
-  if (to_unexclude.n_rows > 0){
-    vdifference(strong, to_unexclude, strong);
+  if (to_include.n_rows > 0){
+    vunion(strong, to_include, strong);
     iters += solve(z, g, lambda, &strong, max_iterations);
   }
   return iters;
@@ -87,8 +88,8 @@ GLM::sequential_solve(colvec &z,
   mechanisms we use in the solvers */
 size_t
 GLM::solve(colvec &z,
-              double lambda,
-              size_t max_iterations) {
+            double lambda,
+            size_t max_iterations) {
   colvec g;
   return solve(z, g, lambda, NULL, max_iterations);
 }

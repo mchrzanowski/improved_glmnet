@@ -35,7 +35,7 @@ protected:
 
   virtual size_t solve(colvec &z, colvec &g,
                         double lambda,
-                        const uvec *blacklisted,
+                        const uvec *whitelisted,
                         size_t max_iterations=0) = 0;
 
   void calculateGradient(const colvec &z, double lambda, colvec &g);

@@ -22,7 +22,7 @@ TestGLM::calculateXXw(const colvec &w, colvec &ret){
 size_t
 TestGLM::solve(colvec &z, colvec &g,
                 double lambda,
-                const uvec *blacklisted,
+                const uvec *whitelisted,
                 size_t max_iterations){
 
   assert(lambda > 0);
@@ -49,6 +49,9 @@ TestGLM::solve(colvec &z, colvec &g,
     g = g_bias + K * z;
 
     findActiveSet(g, z, A);
+    if (whitelisted != NULL){
+      vintersection(A, *whitelisted, A);
+    }
     if (A.n_rows == 0) break;
 
     if (A.n_rows == A_prev.n_rows && accu(A == A_prev) == A.n_rows){
