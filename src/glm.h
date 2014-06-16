@@ -11,7 +11,7 @@ public:
 
   GLM(double eta, uword n_half, uword n);
 
-  virtual void createXw(const colvec &w, colvec &ret) = 0;
+  virtual void calculateXXw(const colvec &w, colvec &ret) = 0;
 
   size_t sequential_solve(colvec &z,
                           double lambda, double prev_lambda,

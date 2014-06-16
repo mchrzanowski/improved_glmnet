@@ -9,13 +9,13 @@ using namespace arma;
 
 FatGLM::FatGLM(const mat &X, const vec &y, double eta) :
                 GLM(eta, X.n_cols, 2*X.n_cols), X(X) {
-  assert(eta >= 0 && eta <= 1);
   const colvec Xy = (y.t() * X).t();
   g_start = join_vert(-Xy, Xy);
 }
 
+/* calculate X^T X * w */
 void
-FatGLM::createXw(const colvec &w, colvec &ret){
+FatGLM::calculateXXw(const colvec &w, colvec &ret){
   ret = ((X * w).t() * X).t();
 }
 
@@ -69,7 +69,7 @@ FatGLM::calculateGradient(const colvec &z, double lambda, colvec &g){
   const double multiplier = lambda * (1 - eta);
   
   colvec g_half;
-  createXw(w, g_half);
+  calculateXXw(w, g_half);
   g = g_bias + z * multiplier;
   g.subvec(0, n_half-1) += g_half;
   g.subvec(n_half, n-1) += -g_half;

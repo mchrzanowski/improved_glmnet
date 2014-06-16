@@ -10,7 +10,7 @@ class FatGLM : public GLM {
 public:
   FatGLM(const mat &X, const vec &y, const double eta);
 
-  void createXw(const colvec &w, colvec &ret);
+  void calculateXXw(const colvec &w, colvec &ret);
   
   size_t solve(colvec &z,
                 double lambda,

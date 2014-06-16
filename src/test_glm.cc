@@ -8,8 +8,6 @@ using namespace arma;
 TestGLM::TestGLM(const mat &X, const vec &y, double eta) : 
                   GLM(eta, X.n_cols, 2*X.n_cols) {
 
-  assert(eta >= 0 && eta <= 1);
-
   const mat XXT = X.t();
   XX = XXT * X;
 
@@ -17,8 +15,9 @@ TestGLM::TestGLM(const mat &X, const vec &y, double eta) :
   g_start = join_vert(-Xy, Xy);
 }
 
+/* calculate X^T X * w */
 void
-TestGLM::createXw(const colvec &w, colvec &ret){
+TestGLM::calculateXXw(const colvec &w, colvec &ret){
   ret = XX * w;
 }
 

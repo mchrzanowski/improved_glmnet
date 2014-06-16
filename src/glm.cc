@@ -5,7 +5,11 @@
 
 using namespace arma;
 
-GLM::GLM(double eta, uword n_half, uword n) : eta(eta), n_half(n_half), n(n) {}
+GLM::GLM(double eta, uword n_half, uword n) : eta(eta), n_half(n_half), n(n) {
+  assert(eta >= 0 && eta <= 1);
+  assert(n_half > 0);
+  assert(n == 2 * n_half);
+}
 
 /* get lambda_max, which is important in
 the regularization path calculation. */
@@ -28,7 +32,7 @@ GLM::sequential_solve(colvec &z,
   const colvec yX = g_start.subvec(n_half, n-1);
 
   colvec val;
-  createXw(w, val);
+  calculateXXw(w, val);
 
   uvec excluded = find(abs(yX - val) < eta * (2 * lambda - prev_lambda));
   excluded = join_vert(excluded, excluded + n_half);

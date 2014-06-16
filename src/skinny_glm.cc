@@ -7,15 +7,15 @@
 using namespace arma;
 
 SkinnyGLM::SkinnyGLM(const mat &X, const vec &y, const double eta) :
-                      GLM(eta, X.n_cols, 2*X.n_cols) {
-  assert(eta >= 0 && eta <= 1);    
+                      GLM(eta, X.n_cols, 2*X.n_cols) {   
   XX = symmatu(X.t() * X);
   const colvec Xy = (y.t() * X).t();
   g_start = join_vert(-Xy, Xy);
 }
 
+/* calculate X^T X * w */
 void
-SkinnyGLM::createXw(const colvec &w, colvec &ret){
+SkinnyGLM::calculateXXw(const colvec &w, colvec &ret){
   ret = XX * w;
 }
 
@@ -113,7 +113,7 @@ SkinnyGLM::solve(colvec &z, colvec &g,
     }
     else {
       colvec g_half;
-      createXw(w, g_half);
+      calculateXXw(w, g_half);
       g = g_bias + z * multiplier;
       g.subvec(0, n_half-1) += g_half;
       g.subvec(n_half, n-1) += -g_half;
