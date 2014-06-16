@@ -58,23 +58,6 @@ FatGLM::createMatrixChunks(mat &x1, mat &x2,
   }
 }
 
-void
-FatGLM::calculateGradient(const colvec &z, double lambda, colvec &g){
-
-  colvec u = z.subvec(0, n_half-1).unsafe_col(0);
-  colvec l = z.subvec(n_half, n-1).unsafe_col(0);
-  colvec w = u - l;
-
-  const colvec g_bias = g_start + lambda * eta;
-  const double multiplier = lambda * (1 - eta);
-  
-  colvec g_half;
-  calculateXXw(w, g_half);
-  g = g_bias + z * multiplier;
-  g.subvec(0, n_half-1) += g_half;
-  g.subvec(n_half, n-1) += -g_half;
-}
-
 size_t
 FatGLM::solve(colvec &z, colvec &g,
               double lambda,
@@ -88,26 +71,23 @@ FatGLM::solve(colvec &z, colvec &g,
 
   FatCG cg_solver;
   colvec delz_A, g_A, g_bias_A, Kz_A;
-  colvec u = z.subvec(0, n_half-1).unsafe_col(0);
-  colvec l = z.subvec(n_half, n-1).unsafe_col(0);
-  colvec w = u - l;
   mat x1, x2;
   size_t i;
   uvec A, A_prev;
 
+  colvec u = z.subvec(0, n_half-1).unsafe_col(0);
+  colvec l = z.subvec(n_half, n-1).unsafe_col(0);
+  colvec w = u - l;
+  
   const colvec g_bias = g_start + lambda * eta;
   const double multiplier = lambda * (1 - eta);
 
   for (i = 0; i < max_iterations; i++){
 
-    /* use the gradient from the previous run
-      for the first iteration of this run.
-      we just have to adjust by the current lambda. */
-    if (i == 0 && g.n_rows == z.n_rows){
-      g += lambda * eta + z * lambda * (1 - eta);
-    }
-    else {
-      calculateGradient(z, lambda, g);      
+    /* use the gradient from the sequential_solve's KKT check
+      for the first iteration of this run. */
+    if (i != 0 || g.n_rows != z.n_rows){
+      calculateGradient(z, lambda, g);
     }
 
     findActiveSet(g, z, A);

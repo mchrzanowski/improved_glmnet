@@ -99,15 +99,8 @@ SkinnyGLM::solve(colvec &z, colvec &g,
 
   for (i = 0; i < max_iterations; i++){
 
-    if (i == 0 && g.n_rows == z.n_rows){
-      g += lambda * eta + z * lambda * (1 - eta);
-    }
-    else {
-      colvec g_half;
-      calculateXXw(w, g_half);
-      g = g_bias + z * multiplier;
-      g.subvec(0, n_half-1) += g_half;
-      g.subvec(n_half, n-1) += -g_half;
+    if (i != 0 || g.n_rows != z.n_rows){
+      calculateGradient(z, lambda, g);
     }
     
     findActiveSet(g, z, A);

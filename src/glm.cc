@@ -20,6 +20,23 @@ GLM::maxLambda(){
   return norm(g_start, "inf") / divisor;
 }
 
+void
+GLM::calculateGradient(const colvec &z, double lambda, colvec &g){
+
+  colvec u = z.subvec(0, n_half-1).unsafe_col(0);
+  colvec l = z.subvec(n_half, n-1).unsafe_col(0);
+  colvec w = u - l;
+
+  const colvec g_bias = g_start + lambda * eta;
+  const double multiplier = lambda * (1 - eta);
+  
+  colvec g_half;
+  calculateXXw(w, g_half);
+  g = g_bias + z * multiplier;
+  g.subvec(0, n_half-1) += g_half;
+  g.subvec(n_half, n-1) -= g_half;
+}
+
 /* solve the elastic net problem for the next lambda in a sequence, where
   the previous lambda value solved for was prev_lambda. use the sequential
   strong rules from [TBFHSTT10] to filter predictors out of the active sets */
@@ -37,34 +54,29 @@ GLM::sequential_solve(colvec &z,
   colvec val;
   calculateXXw(w, val);
 
-  uvec excluded = find(abs(yX - val) < eta * (2 * lambda - prev_lambda));
-  excluded = join_vert(excluded, excluded + n_half);
+  uvec strong = find(abs(yX - val) < eta * (2 * lambda - prev_lambda));
+  strong = join_vert(strong, strong + n_half);
 
   colvec g;
   uvec active, to_unexclude;
 
   size_t iters = 0;
 
-  while (true){
+  // solve for non-excluded variables.
+  iters += solve(z, g, lambda, &strong, max_iterations);
 
-    iters += solve(z, g, lambda, &excluded, max_iterations);
+  /* check KKT conditions for strong set.
+  is a predictor in the active set?
+  if so, we screwed up. remove it from the blacklist
+  and re-do the optimization. */
+  calculateGradient(z, lambda, g);
+  findActiveSet(g, z, active);
+  vintersection(strong, active, to_unexclude);
 
-    /* check KKT conditions.
-    is an excluded variable in the active set?
-    if so, we screwed up. remove it from the blacklist
-    and re-do the optimization. */
-    findActiveSet(g, z, active);
-    vintersection(excluded, active, to_unexclude);
-    if (to_unexclude.n_rows > 0){
-      vdifference(excluded, to_unexclude, excluded);
-    }
-    else {
-      break;
-    }
-    /* we can re-use g for the next lambda value.
-      just get rid of the portions dealing with the
-      current lambda */
-    g -= lambda * eta + z * lambda * (1 - eta);
+  // solve again, if needed.
+  if (to_unexclude.n_rows > 0){
+    vdifference(strong, to_unexclude, strong);
+    iters += solve(z, g, lambda, &strong, max_iterations);
   }
   return iters;
 }

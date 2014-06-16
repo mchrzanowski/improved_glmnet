@@ -24,8 +24,5 @@ public:
 private:
   void createMatrixChunks(mat &x1, mat &x2,
                           const uvec &A, const uvec &A_prev);
-
-  void calculateGradient(const colvec &z, double lambda, colvec &g);
-
   const mat &X;
 };

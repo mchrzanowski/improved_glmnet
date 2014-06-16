@@ -38,6 +38,8 @@ protected:
                         const uvec *blacklisted,
                         size_t max_iterations=0) = 0;
 
+  void calculateGradient(const colvec &z, double lambda, colvec &g);
+
   bool update(colvec &z,
               const uvec &A,
               const colvec &delz_A,

@@ -54,13 +54,20 @@ crossValidate(const mat &X,
   // get initial lambda
   double max_lambda = g->maxLambda();
   double lambda = max_lambda;
+  double prev_lambda = -1;
   for (unsigned i = 0; i < 100; i++){
-    g->solve(z, lambda, max_iterations);
+    if (i == 0){
+      g->solve(z, lambda, max_iterations);
+    }
+    else {
+      g->sequential_solve(z, lambda, prev_lambda, max_iterations);
+    }
     double val = GLM::evaluate(X_test, y_test, z, lambda, eta);
     if (val < best_val){
       best_lambda = lambda;
       best_val = val;
     }
+    prev_lambda = lambda;
     lambda *= 0.9545486;
   }
   delete g;

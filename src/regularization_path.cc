@@ -42,10 +42,10 @@ main(int argc, char **argv){
   double time = timer.toc();
   cout << "Runtime: " << time << endl;
 
-  /*for (auto &kv : lambda_to_optval){
+  for (auto &kv : lambda_to_optval){
     cout << "Lambda: " << kv.first << "\tOptVal: " << kv.second <<
       "\t L1 norm: " << norm(lambda_to_zstar[kv.first], 1) << endl;
-  }*/
+  }
 
   return 0;
 }
