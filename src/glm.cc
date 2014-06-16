@@ -63,21 +63,25 @@ GLM::sequential_solve(colvec &z,
 
   size_t iters = 0;
 
-  // solve for whitelisted variables.
-  iters += solve(z, g, lambda, &strong, max_iterations);
-
-  /* check KKT conditions for strong set.
-  is a predictor in the active set that wasn't in the strong set?
-  if so, we screwed up. add it to the whitelist
-  and re-do the optimization. */
-  calculateGradient(z, lambda, g);
-  findActiveSet(g, z, active);
-  vdifference(active, strong, to_include);
-
-  // solve again, if needed.
-  if (to_include.n_rows > 0){
-    vunion(strong, to_include, strong);
+  while (true){
+    // solve for whitelisted variables.
     iters += solve(z, g, lambda, &strong, max_iterations);
+
+    /* check KKT conditions for strong set.
+    is a predictor in the active set that wasn't in the strong set?
+    if so, we screwed up. add it to the whitelist
+    and re-do the optimization. */
+    calculateGradient(z, lambda, g);
+    findActiveSet(g, z, active);
+    vdifference(active, strong, to_include);
+
+    // solve again, if needed.
+    if (to_include.n_rows > 0){
+      vunion(strong, to_include, strong);
+    }
+    else {
+      break;
+    }
   }
   return iters;
 }
