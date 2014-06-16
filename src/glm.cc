@@ -5,20 +5,69 @@
 
 using namespace arma;
 
-GLM::GLM(double eta) : eta(eta) {}
+GLM::GLM(double eta, uword n_half, uword n) : eta(eta), n_half(n_half), n(n) {}
 
 /* get lambda_max, which is important in
 the regularization path calculation. */
-double GLM::maxLambda(){
+double
+GLM::maxLambda(){
   // if eta = 0, just pretend it's really small.
   double divisor = eta == 0 ? 1e-4 : eta;
   return norm(g_start, "inf") / divisor;
 }
 
+size_t
+GLM::sequential_solve(colvec &z,
+                      double lambda, double prev_lambda,
+                      size_t max_iterations){
+
+  colvec u = z.subvec(0, n_half-1).unsafe_col(0);
+  colvec l = z.subvec(n_half, n-1).unsafe_col(0);
+  colvec w = u - l;
+
+  const colvec yX = g_start.subvec(n_half, n-1);
+
+  colvec val;
+  createXw(w, val);
+
+  uvec excluded = find(abs(yX - val) < eta * (2 * lambda - prev_lambda));
+  excluded = join_vert(excluded, excluded + n_half);
+
+  colvec g;
+  uvec active, to_unexclude;
+
+  size_t iters = 0;
+
+  while (true){
+
+    iters += solve(z, g, lambda, &excluded, max_iterations);
+
+    /* check KKT conditions.
+    is an excluded variable in the active set?
+    if so, we screwed up. remove it from the blacklist
+    and re-do the optimization. */
+    findActiveSet(g, z, active);
+    vintersection(excluded, active, to_unexclude);
+    if (to_unexclude.n_rows > 0){
+      vdifference(excluded, to_unexclude, excluded);
+    }
+    else {
+      break;
+    }
+    /* we can re-use g for the next lambda value.
+      just get rid of the portions dealing with the
+      current lambda */
+    g -= lambda * eta + z * lambda * (1 - eta);
+  }
+  return iters;
+}
+
 /* evaluate the elastic net function value for a given
   problem instance */
-double GLM::evaluate(const mat &X, const colvec &y, const colvec &z,
-                      double lambda, double eta){
+double
+GLM::evaluate(const mat &X,
+              const colvec &y, const colvec &z,
+              double lambda, double eta){
 
   const colvec w = z.subvec(0, X.n_cols - 1) - 
                     z.subvec(X.n_cols, 2 * X.n_cols - 1);
@@ -29,8 +78,9 @@ double GLM::evaluate(const mat &X, const colvec &y, const colvec &z,
 
 /* try to find a step size to improve z. return true if 
 we were able to find a valid step size, false otherwise */
-bool GLM::update(colvec &z, const uvec &A, const colvec &delz_A,
-  const colvec &Kz, const colvec &Ku, const vec &eta){
+bool
+GLM::update(colvec &z, const uvec &A, const colvec &delz_A,
+            const colvec &Kz, const colvec &Ku, const vec &eta){
 
   // try to get the largest step possible.
   double alpha = aggressiveStep(A, eta, z, delz_A, Kz, Ku);
@@ -49,7 +99,8 @@ bool GLM::update(colvec &z, const uvec &A, const colvec &delz_A,
 /* project vector to non-negative orthant.
 then figure out whether i or n_half + i can be nonzero.
 sparsification is really, really useful for speeding up convergence. */
-void GLM::projectAndSparsify(colvec &w, colvec &u, colvec &l){
+void
+GLM::projectAndSparsify(colvec &w, colvec &u, colvec &l){
   static const auto clamp = [](double d) { return d >= 0 ? d : 0; };
   u.transform(clamp);
   l.transform(clamp);
@@ -57,7 +108,8 @@ void GLM::projectAndSparsify(colvec &w, colvec &u, colvec &l){
 }
 
 /* Force one of i or n+i to be active. */
-void GLM::sparsify(colvec &w, colvec &u, colvec &l){
+void
+GLM::sparsify(colvec &w, colvec &u, colvec &l){
   w = u - l; 
   const uvec neg_w = find(w < 0);
   const uvec pos_w = find(w > 0);
@@ -68,9 +120,10 @@ void GLM::sparsify(colvec &w, colvec &u, colvec &l){
 }
 
 /* secret sauce that needs a fat, proper comment */
-double GLM::aggressiveStep(const uvec &A, const vec &eta,
-                            colvec &z, const colvec &delz_A, 
-                            const colvec &Kz, const colvec &Ku){
+double
+GLM::aggressiveStep(const uvec &A, const vec &eta,
+                    colvec &z, const colvec &delz_A, 
+                    const colvec &Kz, const colvec &Ku){
 
   // approximation of gradient at a knot.
   static const auto approx = [](double alpha, double p, double q)
@@ -134,7 +187,8 @@ can make progress in this iteration. We note that clamping index i (which we
 assume is a knot point) means setting alpha to be z_i / delz_i. According to
 Bertsekas[82], we can *always* select the smallest step size, hence clamping
 the corresponding value for that chosen index. */
-double GLM::conservativeStep(const uvec &A, colvec &z, const colvec &delz_A){
+double
+GLM::conservativeStep(const uvec &A, colvec &z, const colvec &delz_A){
 
   colvec z_A = z(A);
   const uvec neg_gradient = find(delz_A < 0);
@@ -158,7 +212,8 @@ double GLM::conservativeStep(const uvec &A, colvec &z, const colvec &delz_A){
 this means look for all elements which have a nonpositive gradient component
 or are strictly positive. this basically means that these are the
 indices that we can work on trying to decrease in this iteration. */
-void GLM::findActiveSet(const colvec &g, const colvec &z, uvec &A){
+void
+GLM::findActiveSet(const colvec &g, const colvec &z, uvec &A){
   const uvec nonpos_g = find(g <= 0);
   const uvec pos_z = find(z > 0);
   vunion(nonpos_g, pos_z, A);

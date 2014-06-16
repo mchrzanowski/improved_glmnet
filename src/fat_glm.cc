@@ -7,12 +7,16 @@
 
 using namespace arma;
 
-FatGLM::FatGLM(const mat &X_, const vec &y, double eta) :
-                GLM(eta), X(X_), n_half(X.n_cols), n(2*X.n_cols) {
-
+FatGLM::FatGLM(const mat &X, const vec &y, double eta) :
+                GLM(eta, X.n_cols, 2*X.n_cols), X(X) {
   assert(eta >= 0 && eta <= 1);
   const colvec Xy = (y.t() * X).t();
   g_start = join_vert(-Xy, Xy);
+}
+
+void
+FatGLM::createXw(const colvec &w, colvec &ret){
+  ret = ((X * w).t() * X).t();
 }
 
 /* x1 and x2 are the rows from X based on the active set A.
@@ -52,7 +56,6 @@ FatGLM::createMatrixChunks(mat &x1, mat &x2,
     x1 = X.cols(A_top);
     x2 = X.cols(A_bottom);
   }
-
 }
 
 void
@@ -64,54 +67,12 @@ FatGLM::calculateGradient(const colvec &z, double lambda, colvec &g){
 
   const colvec g_bias = g_start + lambda * eta;
   const double multiplier = lambda * (1 - eta);
-  const colvec g_half = ((X * w).t() * X).t();
+  
+  colvec g_half;
+  createXw(w, g_half);
   g = g_bias + z * multiplier;
   g.subvec(0, n_half-1) += g_half;
   g.subvec(n_half, n-1) += -g_half;
-}
-
-size_t
-FatGLM::sequential_solve(colvec &z,
-                          double lambda, double prev_lambda,
-                          size_t max_iterations){
-
-  colvec u = z.subvec(0, n_half-1).unsafe_col(0);
-  colvec l = z.subvec(n_half, n-1).unsafe_col(0);
-  colvec w = u - l;
-
-  const colvec yX = g_start.subvec(n_half, 2*n_half-1);
-
-  colvec val = abs(yX - ((X * w).t() * X).t());
-  uvec excluded = find(val < eta * (2 * lambda - prev_lambda));
-  excluded = join_vert(excluded, excluded + n_half);
-
-  colvec g;
-  uvec active, to_unexclude;
-
-  size_t iters = 0;
-
-  while (true){
-
-    iters += solve(z, g, lambda, &excluded, max_iterations);
-
-    /* check KKT conditions.
-    is an excluded variable in the active set?
-    if so, we screwed up. remove it from the blacklist
-    and re-do the optimization. */
-    findActiveSet(g, z, active);
-    vintersection(excluded, active, to_unexclude);
-    if (to_unexclude.n_rows > 0){
-      vdifference(excluded, to_unexclude, excluded);
-    }
-    else {
-      break;
-    }
-    /* we can re-use g for the next lambda value.
-      just get rid of the portions dealing with the
-      current lambda */
-    g -= lambda * eta + z * lambda * (1 - eta);
-  }
-  return iters;
 }
 
 size_t

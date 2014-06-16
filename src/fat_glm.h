@@ -9,14 +9,12 @@ class FatGLM : public GLM {
 
 public:
   FatGLM(const mat &X, const vec &y, const double eta);
+
+  void createXw(const colvec &w, colvec &ret);
   
   size_t solve(colvec &z,
                 double lambda,
                 size_t max_iterations=0);
-
-  size_t sequential_solve(colvec &z,
-                          double lambda, double prev_lambda,
-                          size_t max_iterations=0);
 
   size_t solve(colvec &z, colvec &g,
                 double lambda,
@@ -30,5 +28,4 @@ private:
   void calculateGradient(const colvec &z, double lambda, colvec &g);
 
   const mat &X;
-  const uword n_half, n;
 };

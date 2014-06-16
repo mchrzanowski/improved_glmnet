@@ -26,7 +26,6 @@ private:
                   bool restart,
                   size_t iterations);
 
-  const double RESIDUAL_TOL = 1e-3;
   double prev_r_sq_sum;
   vec p_top, p_bottom, r_top, r_bottom;  
 };

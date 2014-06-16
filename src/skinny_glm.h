@@ -8,13 +8,11 @@ class SkinnyGLM : public GLM {
 public:
   SkinnyGLM(const mat &X, const vec &y, double eta);
 
+  void createXw(const colvec &w, colvec &ret);
+
   size_t solve(colvec &z,
                 double lambda,
                 size_t max_iterations=0);
-
-  size_t sequential_solve(colvec &z,
-                          double lambda, double prev_lambda,
-                          size_t max_iterations=0);
 
   size_t solve(colvec &z, colvec &g,
                 double lambda,
@@ -27,5 +25,4 @@ private:
                             double multiplier);
 
   mat XX;
-  const uword n, n_half;
 };

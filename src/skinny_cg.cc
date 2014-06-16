@@ -16,7 +16,7 @@ void SkinnyCG::subsolve(const mat &A,
     prev_r_sq_sum = dot(r_top, r_top);
   }
 
-  for (size_t i = 0; i < iterations && prev_r_sq_sum > RESIDUAL_TOL; i++){
+  for (size_t i = 0; i < iterations; i++){
     colvec Ap_top(p_top.n_rows);
     skinnyMultiply(A, p_top, Ap_top);
 
@@ -83,7 +83,7 @@ void SkinnyCG::fullSolve(const mat &A1, const mat &A2, const mat &A4,
     prev_r_sq_sum = dot(r_top, r_top) + dot(r_bottom, r_bottom);
   }
 
-  for (size_t i = 0; i < iterations && prev_r_sq_sum > RESIDUAL_TOL; i++){
+  for (size_t i = 0; i < iterations; i++){
     colvec Ap_top, Ap_bottom;
     skinnyMultiply(A1, A2, A4, p_top, p_bottom, Ap_top, Ap_bottom);
 

@@ -6,7 +6,7 @@
 using namespace arma;
 
 TestGLM::TestGLM(const mat &X, const vec &y, double eta) : 
-                  GLM(eta), n_half(X.n_cols), n(2*X.n_cols) {
+                  GLM(eta, X.n_cols, 2*X.n_cols) {
 
   assert(eta >= 0 && eta <= 1);
 
@@ -17,56 +17,24 @@ TestGLM::TestGLM(const mat &X, const vec &y, double eta) :
   g_start = join_vert(-Xy, Xy);
 }
 
-size_t TestGLM::sequential_solve(colvec &z,
-                                double lambda, double prev_lambda,
-                                size_t max_iterations){
-  
-  colvec u = z.subvec(0, n_half-1).unsafe_col(0);
-  colvec l = z.subvec(n_half, n-1).unsafe_col(0);
-  colvec w = u - l;
-
-  const colvec yX = g_start.subvec(n_half, n-1);
-
-  colvec val = abs(yX - XX * w);
-  uvec excluded = find(val < eta * (2 * lambda - prev_lambda));
-  excluded = join_vert(excluded, excluded + n_half);
-
-  colvec g;
-  uvec active, to_unexclude;
-
-  size_t iters = 0;
-
-  while (true){
-
-    iters += solve(z, g, lambda, &excluded, max_iterations);
-
-    /* check KKT conditions.
-    is an excluded variable in the active set?
-    if so, we screwed up. remove it from the blacklist
-    and re-do the optimization. */
-    findActiveSet(g, z, active);
-    vintersection(excluded, active, to_unexclude);
-    if (to_unexclude.n_rows > 0){
-      vdifference(excluded, to_unexclude, excluded);
-    }
-    else {
-      break;
-    }
-  }
-  return iters;
+void
+TestGLM::createXw(const colvec &w, colvec &ret){
+  ret = XX * w;
 }
 
-size_t TestGLM::solve(colvec &z,
-                    double lambda,
-                    size_t max_iterations){
+size_t
+TestGLM::solve(colvec &z,
+                double lambda,
+                size_t max_iterations){
   colvec g;
   return solve(z, g, lambda, NULL, max_iterations);
 }
 
-size_t TestGLM::solve(colvec &z, colvec &g,
-                      double lambda,
-                      const uvec *blacklisted,
-                      size_t max_iterations){
+size_t
+TestGLM::solve(colvec &z, colvec &g,
+                double lambda,
+                const uvec *blacklisted,
+                size_t max_iterations){
 
   assert(lambda > 0);
   if (max_iterations == 0){

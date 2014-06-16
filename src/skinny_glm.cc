@@ -7,11 +7,16 @@
 using namespace arma;
 
 SkinnyGLM::SkinnyGLM(const mat &X, const vec &y, const double eta) :
-                      GLM(eta), n(2*X.n_cols), n_half(X.n_cols) {
+                      GLM(eta, X.n_cols, 2*X.n_cols) {
   assert(eta >= 0 && eta <= 1);    
   XX = symmatu(X.t() * X);
   const colvec Xy = (y.t() * X).t();
   g_start = join_vert(-Xy, Xy);
+}
+
+void
+SkinnyGLM::createXw(const colvec &w, colvec &ret){
+  ret = XX * w;
 }
 
 void
@@ -70,50 +75,6 @@ SkinnyGLM::createMatrixChunks(mat &x1, mat &x2, mat &x4,
 }
 
 size_t
-SkinnyGLM::sequential_solve(colvec &z,
-                            double lambda, double prev_lambda,
-                            size_t max_iterations){
-
-  colvec u = z.subvec(0, n_half-1).unsafe_col(0);
-  colvec l = z.subvec(n_half, n-1).unsafe_col(0);
-  colvec w = u - l;
-
-  const colvec yX = g_start.subvec(n_half, 2*n_half-1);
-
-  colvec val = abs(yX - XX * w);
-  uvec excluded = find(val < eta * (2 * lambda - prev_lambda));
-  excluded = join_vert(excluded, excluded + n_half);
-
-  colvec g;
-  uvec active, to_unexclude;
-
-  size_t iters = 0;
-
-  while (true){
-
-    iters += solve(z, g, lambda, &excluded, max_iterations);
-
-    /* check KKT conditions.
-    is an excluded variable in the active set?
-    if so, we screwed up. remove it from the blacklist
-    and re-do the optimization. */
-    findActiveSet(g, z, active);
-    vintersection(excluded, active, to_unexclude);
-    if (to_unexclude.n_rows > 0){
-      vdifference(excluded, to_unexclude, excluded);
-    }
-    else {
-      break;
-    }
-    /* we can re-use g for the next lambda value.
-      just get rid of the portions dealing with the
-      current lambda */
-    g -= lambda * eta + z * lambda * (1 - eta);
-  }
-  return iters;
-}
-
-size_t
 SkinnyGLM::solve(colvec &z,
                   double lambda,
                   size_t max_iterations){
@@ -151,7 +112,8 @@ SkinnyGLM::solve(colvec &z, colvec &g,
       g += lambda * eta + z * lambda * (1 - eta);
     }
     else {
-      const colvec g_half = XX * w;
+      colvec g_half;
+      createXw(w, g_half);
       g = g_bias + z * multiplier;
       g.subvec(0, n_half-1) += g_half;
       g.subvec(n_half, n-1) += -g_half;

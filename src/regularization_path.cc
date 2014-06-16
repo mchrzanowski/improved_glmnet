@@ -13,7 +13,8 @@ argv[2] = location of A matrix
 argv[3] = location of b vector
 argv[4] = location of initial z vector
 */
-int main(int argc, char **argv){
+int
+main(int argc, char **argv){
 
   assert(argc == 5);
   arma_rng::set_seed(0);

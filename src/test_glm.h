@@ -10,15 +10,13 @@ class TestGLM : public GLM {
 
 public:
   TestGLM(const mat &X, const vec &y, const double eta);
+
+  void createXw(const colvec &w, colvec &ret);
   
   size_t solve(colvec &z,
               double lambda,
               size_t max_iterations=0);
   
-  size_t sequential_solve(colvec &z,
-                          double lambda, double prev_lambda,
-                          size_t max_iterations=0);
-
   size_t solve(colvec &z, colvec &g,
                 double lambda,
                 const uvec *blacklisted=NULL,
@@ -26,5 +24,4 @@ public:
 
 private:
   mat XX, K;
-  const uword n_half, n;
 };
