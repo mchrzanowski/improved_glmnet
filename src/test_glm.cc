@@ -7,26 +7,16 @@ using namespace arma;
 
 TestGLM::TestGLM(const mat &X, const vec &y, double eta) : 
                   GLM(eta, X.n_cols, 2*X.n_cols) {
-
   const mat XXT = X.t();
   XX = XXT * X;
-
   const colvec Xy = XXT * y;
   g_start = join_vert(-Xy, Xy);
 }
 
-/* calculate X^T X * w */
+/* calculate ret = X^T X * w */
 void
 TestGLM::calculateXXw(const colvec &w, colvec &ret){
   ret = XX * w;
-}
-
-size_t
-TestGLM::solve(colvec &z,
-                double lambda,
-                size_t max_iterations){
-  colvec g;
-  return solve(z, g, lambda, NULL, max_iterations);
 }
 
 size_t

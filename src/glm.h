@@ -11,20 +11,13 @@ public:
 
   GLM(double eta, uword n_half, uword n);
 
-  virtual void calculateXXw(const colvec &w, colvec &ret) = 0;
-
   size_t sequential_solve(colvec &z,
                           double lambda, double prev_lambda,
                           size_t max_iterations=0);
 
-  virtual size_t solve(colvec &z,
-                        double lambda,
-                        size_t max_iterations=0) = 0;
-
-  virtual size_t solve(colvec &z, colvec &g,
-                        double lambda,
-                        const uvec *blacklisted,
-                        size_t max_iterations=0) = 0;
+  size_t solve(colvec &z,
+                double lambda,
+                size_t max_iterations=0);
 
   double maxLambda();
 
@@ -37,6 +30,13 @@ protected:
   colvec g_start;
   const double eta;
   const uword n_half, n;
+
+  virtual void calculateXXw(const colvec &w, colvec &ret) = 0;
+
+  virtual size_t solve(colvec &z, colvec &g,
+                        double lambda,
+                        const uvec *blacklisted,
+                        size_t max_iterations=0) = 0;
 
   bool update(colvec &z,
               const uvec &A,

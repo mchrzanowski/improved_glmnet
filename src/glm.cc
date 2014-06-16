@@ -20,6 +20,9 @@ GLM::maxLambda(){
   return norm(g_start, "inf") / divisor;
 }
 
+/* solve the elastic net problem for the next lambda in a sequence, where
+  the previous lambda value solved for was prev_lambda. use the sequential
+  strong rules from [TBFHSTT10] to filter predictors out of the active sets */
 size_t
 GLM::sequential_solve(colvec &z,
                       double lambda, double prev_lambda,
@@ -64,6 +67,18 @@ GLM::sequential_solve(colvec &z,
     g -= lambda * eta + z * lambda * (1 - eta);
   }
   return iters;
+}
+
+/* a solve method that's meant to be called when 
+  we need to solve the elastic net problem for only
+  one lambda value. this call hides a lot of the internal
+  mechanisms we use in the solvers */
+size_t
+GLM::solve(colvec &z,
+              double lambda,
+              size_t max_iterations) {
+  colvec g;
+  return solve(z, g, lambda, NULL, max_iterations);
 }
 
 /* evaluate the elastic net function value for a given

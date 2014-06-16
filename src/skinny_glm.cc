@@ -13,7 +13,7 @@ SkinnyGLM::SkinnyGLM(const mat &X, const vec &y, const double eta) :
   g_start = join_vert(-Xy, Xy);
 }
 
-/* calculate X^T X * w */
+/* calculate ret = X^T X * w*/
 void
 SkinnyGLM::calculateXXw(const colvec &w, colvec &ret){
   ret = XX * w;
@@ -23,7 +23,6 @@ void
 SkinnyGLM::createMatrixChunks(mat &x1, mat &x2, mat &x4,
                               const uvec &A, const uvec &A_prev,
                               double multiplier){
-  
   // get the index of A that is at the boundary of the top
   // n elements and the bottom ones.
   uword divider = binarySearch(A, n_half);
@@ -72,14 +71,6 @@ SkinnyGLM::createMatrixChunks(mat &x1, mat &x2, mat &x4,
     x4 = XX(A_bottom, A_bottom);
     x4.diag() += multiplier;
   }
-}
-
-size_t
-SkinnyGLM::solve(colvec &z,
-                  double lambda,
-                  size_t max_iterations){
-  colvec g;
-  return solve(z, g, lambda, NULL, max_iterations);
 }
 
 size_t

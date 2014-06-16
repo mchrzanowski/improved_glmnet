@@ -13,7 +13,7 @@ FatGLM::FatGLM(const mat &X, const vec &y, double eta) :
   g_start = join_vert(-Xy, Xy);
 }
 
-/* calculate X^T X * w */
+/* calculate ret = X^T X * w */
 void
 FatGLM::calculateXXw(const colvec &w, colvec &ret){
   ret = ((X * w).t() * X).t();
@@ -73,14 +73,6 @@ FatGLM::calculateGradient(const colvec &z, double lambda, colvec &g){
   g = g_bias + z * multiplier;
   g.subvec(0, n_half-1) += g_half;
   g.subvec(n_half, n-1) += -g_half;
-}
-
-size_t
-FatGLM::solve(colvec &z,
-              double lambda,
-              size_t max_iterations) {
-  colvec g;
-  return solve(z, g, lambda, NULL, max_iterations);
 }
 
 size_t
