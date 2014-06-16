@@ -3,6 +3,8 @@
 #include "skinny_glm.h"
 #include "test_glm.h"
 
+using namespace std;
+
 /* create a GLM solver instance.
   pick one based on whether the input data matrix 
   is skinny, fat, or whether we should use the basic solver */
@@ -12,15 +14,15 @@ makeGLM(const mat &X,
         double eta,
         bool unoptimized_solver){
   if (unoptimized_solver){
-    std::cout << "Using TestGLM solver." << std::endl;
+    cout << "Using TestGLM solver." << endl;
     return new TestGLM(X, y, eta);
   }
   else if (X.n_cols >= 3 * X.n_rows){   // works well in practice.
-    std::cout << "Using FatGLM solver." << std::endl;
+    cout << "Using FatGLM solver." << endl;
     return new FatGLM(X, y, eta);
   }
   else {
-    std::cout << "Using SkinnyGLM solver." << std::endl;
+    cout << "Using SkinnyGLM solver." << endl;
     return new SkinnyGLM(X, y, eta);
   }
 }
@@ -49,7 +51,7 @@ crossValidate(const mat &X,
 
   GLM *g = makeGLM(X_train, y_train, eta);
   double best_lambda = -1;
-  double best_val = std::numeric_limits<double>::max();
+  double best_val = numeric_limits<double>::max();
 
   // get initial lambda
   double max_lambda = g->maxLambda();
@@ -79,8 +81,8 @@ void
 regularizationPath(const mat &X,
                     const colvec &y,
                     colvec &z,
-                    std::map<double, double> &lambda_to_optval,
-                    std::map<double, colvec> &lambda_to_zstar,
+                    map<double, double> &lambda_to_optval,
+                    map<double, colvec> &lambda_to_zstar,
                     double eta,
                     size_t max_iterations){
   
