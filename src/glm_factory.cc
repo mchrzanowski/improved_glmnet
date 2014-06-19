@@ -85,13 +85,13 @@ regularizationPath(const mat &X,
                     map<double, colvec> &lambda_to_zstar,
                     double eta,
                     size_t max_iterations){
-
-  uvec ever_active;
   
   GLM *g = makeGLM(X, y, eta);
   double max_lambda = g->maxLambda();
   double lambda = max_lambda;
   double prev_lambda = -1;
+  uvec ever_active;
+
   for (unsigned i = 0; i < 100; i++){
     if (i == 0){
       g->solve(z, lambda, max_iterations);
