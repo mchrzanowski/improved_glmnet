@@ -15,6 +15,11 @@ public:
                           double lambda, double prev_lambda,
                           size_t max_iterations=0);
 
+  size_t sequential_solve(colvec &z,
+                          uvec &ever_active,
+                          double lambda, double prev_lambda,
+                          size_t max_iterations=0);
+
   size_t solve(colvec &z,
                 double lambda,
                 size_t max_iterations=0);
@@ -31,14 +36,14 @@ protected:
   const double eta;
   const uword n_half, n;
 
+  void calculateGradient(const colvec &z, double lambda, colvec &g);
+
   virtual void calculateXXw(const colvec &w, colvec &ret) = 0;
 
   virtual size_t solve(colvec &z, colvec &g,
                         double lambda,
                         const uvec *whitelisted,
                         size_t max_iterations=0) = 0;
-
-  void calculateGradient(const colvec &z, double lambda, colvec &g);
 
   bool update(colvec &z,
               const uvec &A,

@@ -85,6 +85,8 @@ regularizationPath(const mat &X,
                     map<double, colvec> &lambda_to_zstar,
                     double eta,
                     size_t max_iterations){
+
+  uvec ever_active;
   
   GLM *g = makeGLM(X, y, eta);
   double max_lambda = g->maxLambda();
@@ -95,7 +97,7 @@ regularizationPath(const mat &X,
       g->solve(z, lambda, max_iterations);
     }
     else {
-      g->sequential_solve(z, lambda, prev_lambda, max_iterations);
+      g->sequential_solve(z, ever_active, lambda, prev_lambda, max_iterations);
     }
     double value = GLM::evaluate(X, y, z, lambda, eta);
     lambda_to_optval[lambda] = value;

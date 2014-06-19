@@ -20,21 +20,92 @@ GLM::maxLambda(){
   return norm(g_start, "inf") / divisor;
 }
 
+/*
+  g = [-X^Ty; X^Ty] + lambda * eta + [X^TXw; -X^TXw] + z * lambda * (1 - eta)
+*/
 void
 GLM::calculateGradient(const colvec &z, double lambda, colvec &g){
 
   colvec u = z.subvec(0, n_half-1).unsafe_col(0);
   colvec l = z.subvec(n_half, n-1).unsafe_col(0);
   colvec w = u - l;
-
-  const colvec g_bias = g_start + lambda * eta;
-  const double multiplier = lambda * (1 - eta);
   
-  colvec g_half;
-  calculateXXw(w, g_half);
-  g = g_bias + z * multiplier;
-  g.subvec(0, n_half-1) += g_half;
-  g.subvec(n_half, n-1) -= g_half;
+  colvec XXw;
+  calculateXXw(w, XXw);
+  g = g_start + lambda * eta + z * lambda * (1 - eta);
+  g.subvec(0, n_half-1) += XXw;
+  g.subvec(n_half, n-1) -= XXw;
+}
+
+/* Solve the elastic net problem for the next lambda in a sequence, where
+  the previous lambda value solved for was prev_lambda. use the sequential
+  strong rules from [TBFHSTT10] to filter predictors out of the active sets.
+  We also maintain an ever-active of non-zero variables.
+  This is pretty much the combined strategy from section 7 of that paper. */
+size_t
+GLM::sequential_solve(colvec &z,
+                      uvec &ever_active,
+                      double lambda, double prev_lambda,
+                      size_t max_iterations){
+
+  colvec u = z.subvec(0, n_half-1).unsafe_col(0);
+  colvec l = z.subvec(n_half, n-1).unsafe_col(0);
+  colvec w = u - l;
+
+  uvec whitelist = ever_active;
+  size_t iters = 0;
+
+  // form initial strong set.
+  const colvec yX = g_start.subvec(n_half, n-1);
+  colvec val;
+  calculateXXw(w, val);
+  
+  uvec strong = find(abs(yX - val) >= eta * (2 * lambda - prev_lambda));
+  strong = join_vert(strong, strong + n_half);
+
+  colvec g;
+
+  while(true){
+    iters += solve(z, g, lambda, &whitelist, max_iterations);
+
+    // find violated set.
+    uvec active;
+    calculateGradient(z, lambda, g);
+    findActiveSet(g, z, active);
+
+    uvec not_in_active;
+    vdifference(active, whitelist, not_in_active);
+
+    uvec in_strong;
+    vintersection(not_in_active, strong, in_strong);
+
+    // if any strong-set variables are violated,
+    // place them into the whitelist and re-run the optimization.
+    if (in_strong.n_rows > 0){
+      vunion(in_strong, whitelist, whitelist);
+    }
+    else {
+      // check for the non-strong variables.
+      uvec in_neither_set;
+      vdifference(not_in_active, strong, in_neither_set);
+
+      // are there any?
+      // if so, add them to the ever_active set,
+      // re-compute the strong set, and re-run the optimization.
+      if (in_neither_set.n_rows > 0){
+        vunion(ever_active, in_neither_set, ever_active);
+        // don't re-calc XXw; just use the gradient to get this.
+        val = g.subvec(0, n_half-1) - g_start.subvec(0, n_half-1)
+              - lambda * eta - u * lambda * (1 - eta);
+        strong = find(abs(yX - val) >= eta * (2 * lambda - prev_lambda));
+        strong = join_vert(strong, strong + n_half);
+      }
+      else {
+        break;
+      }
+    }
+  }
+  return iters;
 }
 
 /* solve the elastic net problem for the next lambda in a sequence, where
@@ -227,11 +298,11 @@ double
 GLM::conservativeStep(const uvec &A, colvec &z, const colvec &delz_A){
 
   colvec z_A = z(A);
-  const uvec neg_gradient = find(delz_A < 0);
+  const uvec neg_delz = find(delz_A < 0);
   const uvec pos_z = find(z_A > 0);
 
   uvec knots;
-  vintersection(neg_gradient, pos_z, knots);
+  vintersection(neg_delz, pos_z, knots);
 
   // there is absolutely no work left to do. FAILURE.
   if (knots.n_rows == 0) return 0;
@@ -255,5 +326,4 @@ GLM::findActiveSet(const colvec &g, const colvec &z, uvec &A){
   vunion(nonpos_g, pos_z, A);
 }
 
-GLM::~GLM(){   
-}
+GLM::~GLM(){}
