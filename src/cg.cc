@@ -12,7 +12,7 @@ void CG::solve(const mat &A, const vec &b, vec &x,
         prev_r_sq_sum = dot(r, r);
     }
     
-    for (size_t i = 0; i < iterations && prev_r_sq_sum > RESIDUAL_TOL; i++){
+    for (size_t i = 0; i < iterations; i++){
         const vec Ap = A * p;
         const double alpha = prev_r_sq_sum / dot(p, Ap);
 
