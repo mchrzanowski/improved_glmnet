@@ -90,14 +90,13 @@ regularizationPath(const mat &X,
   double max_lambda = g->maxLambda();
   double lambda = max_lambda;
   double prev_lambda = -1;
-  uvec ever_active;
 
   for (unsigned i = 0; i < 100; i++){
     if (i == 0){
       g->solve(z, lambda, max_iterations);
     }
     else {
-      g->sequential_solve(z, ever_active, lambda, prev_lambda, max_iterations);
+      g->sequential_solve(z, lambda, prev_lambda, max_iterations);
     }
     double value = GLM::evaluate(X, y, z, lambda, eta);
     lambda_to_optval[lambda] = value;
