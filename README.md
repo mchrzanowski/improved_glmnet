@@ -16,7 +16,7 @@ I have written one usage example per described feature, which you can see in the
 * <tt>cross_validation.cc</tt>
 * <tt>regularization_path.cc</tt> .
 
-For more details, see [the preliminary paper about the library](https://www.dropbox.com/s/lyy0mgz8pjpdy38/final.pdf).
+For more details, see [the preliminary paper about the library](https://www.dropbox.com/s/45e5p4b0xwe7h56/final.pdf).
 
 ###Dependencies
 * <tt>g++</tt> (at least v. 4.8).
